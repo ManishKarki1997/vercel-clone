@@ -1,18 +1,19 @@
 FROM ubuntu:focal
 
-RUN apt-get update
-RUN apt-get install -y curl
-RUN apt-get install unzip
+RUN apt update
+RUN apt install -y curl
+RUN apt install unzip
 RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
-RUN apt-get upgrade -y
-RUN apt-get install -y nodejs
-RUN apt-get install git -y
+RUN apt upgrade -y
+RUN apt install -y nodejs
+RUN apt install git -y
 
 WORKDIR /home/app
 
 COPY main.sh main.sh
 COPY script.js script.js
-COPY package*.json .
+COPY package.json .
+# intentionally not including package-lock because of this bug https://github.com/npm/cli/issues/4828
 
 RUN npm install 
 
