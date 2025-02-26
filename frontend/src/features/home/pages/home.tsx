@@ -11,8 +11,9 @@ import About from '../components/about'
 function Home() {
   return (
     <main className="bg-gradient-to-br from-gray-900 to-black">
+      <PublicHeader />
+
       <div className="text-gray-300 container mx-auto p-8 overflow-hidden md:rounded-lg md:p-10 lg:p-12">
-        <PublicHeader />
 
         <div className="h-32 md:h-40"></div>
 
