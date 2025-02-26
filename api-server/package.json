@@ -5,7 +5,7 @@
   "scripts": {
     "build": "npx tsc",
     "start": "node dist/index.js",
-    "dev": "tsx watch src/index.ts"    
+    "dev": "tsx watch src/index.ts"
   },
   "devDependencies": {
     "@types/bun": "latest",
@@ -23,8 +23,10 @@
     "typescript": "^5.7.3"
   },
   "dependencies": {
+    "@aws-sdk/client-ecs": "^3.752.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
-    "express": "^4.21.2"
+    "express": "^4.21.2",
+    "random-word-slugs": "^0.1.7"
   }
 }

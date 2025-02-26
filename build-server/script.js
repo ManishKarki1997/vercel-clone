@@ -32,12 +32,7 @@ async function init() {
   });
 
   p.on("close", async () => {
-    console.log("Build complete");
-    console.log("envs", {
-      AWS_S3_BUCKET: process.env.AWS_S3_BUCKET,
-      PROJECT_ID: PROJECT_ID,
-      REGION: process.env.AWS_REGION
-    })
+    console.log("Build complete");    
 
     const distFolderPath = path.join(__dirname, "repo", "dist");
     const distFolderContents = fs.readdirSync(distFolderPath, { recursive: true });
@@ -49,7 +44,7 @@ async function init() {
 
 
 
-      console.log('uploading', file, mime.lookup(filePath));
+      console.log('uploading', file);
       // publishLog(`uploading ${file}`);
 
       const command = new PutObjectCommand({
