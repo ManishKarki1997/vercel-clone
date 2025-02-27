@@ -14,6 +14,7 @@ import AppDashboard from "./features/app/pages/app-dashboard";
 import { AxiosError } from "axios";
 import { toast } from "sonner";
 import AuthGuard from "./lib/auth-guard";
+import AppWrapper from "./features/app/components/app-wrapper";
 
 
 
@@ -56,7 +57,7 @@ const AppContent = () => {
       <Route path="/" element={<Home />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />
-      <Route path={"/app"}>
+      <Route path={"/app"} element={<AppWrapper />}>
         <Route path="" element={
           <AuthGuard>
             <AppDashboard />
