@@ -14,7 +14,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { AxiosError } from "axios"
 import { useForm } from "react-hook-form"
-import { Link } from "react-router"
+import { Link, useNavigate } from "react-router"
 import { toast } from "sonner"
 import { z } from "zod"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "./ui/form"
@@ -25,6 +25,7 @@ export function LoginForm({
 }: React.ComponentPropsWithoutRef<"div">) {
 
   const queryClient = useQueryClient()
+  const navigate = useNavigate()
 
   const mutation = useMutation({
     mutationFn: loginAction,
@@ -32,6 +33,7 @@ export function LoginForm({
       toast.success("Logged in Successfully")
       localStorage.setItem("isLoggedIn", "true")
       queryClient.invalidateQueries({ queryKey: ['profile'] })
+      navigate('/app')
     },
     onError: (err: AxiosError) => {
       toast.error(err?.response?.data?.message || "Something went wrong while logging in")

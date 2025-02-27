@@ -15,6 +15,8 @@ import { AxiosError } from "axios";
 import { toast } from "sonner";
 import AuthGuard from "./lib/auth-guard";
 import AppWrapper from "./features/app/components/app-wrapper";
+import { AuthProvider } from "./providers/auth-provider";
+import { useAuth } from "./hooks/use-auth";
 
 
 
@@ -25,17 +27,8 @@ const AppContent = () => {
   const navigate = useNavigate();
   const isLoginErrorToastShown = React.useRef(false)
 
-  const { data: profileData, error } = useQuery({
-    queryFn: profileAction,
-    queryKey: ['profile'],
-  })
+  const { error } = useAuth()
 
-
-  React.useEffect(() => {
-    if (profileData) {
-      navigate("/app")
-    }
-  }, [navigate, profileData])
 
   React.useEffect(() => {
     const isPreviouslyLoggedIn = localStorage.getItem("isLoggedIn")
@@ -78,8 +71,9 @@ function App() {
 
         <QueryClientProvider client={queryClient}>
           <Toaster position="top-center" />
-
-          <AppContent />
+          <AuthProvider>
+            <AppContent />
+          </AuthProvider>
         </QueryClientProvider>
       </BrowserRouter>
 

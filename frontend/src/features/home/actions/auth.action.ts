@@ -27,3 +27,9 @@ export const profileAction = async () => {
     throw error
   }
 }
+
+export const logoutAction = () => {
+  return api.post(`/auth/logout`, {}, {
+    withCredentials: true
+  })
+}

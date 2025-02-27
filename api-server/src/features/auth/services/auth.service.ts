@@ -32,11 +32,21 @@ const profile = async (accessToken: string) => {
   return user
 }
 
+const logout = async (accessToken: string) => {
+  const { data: user, error } = await db.auth.getUser(accessToken)
+
+  if (user && user?.user?.id) {
+    await db.rpc('delete_user_sessions', { user_id: user.user.id })
+  }
+
+}
+
 
 const AuthService = {
   signup,
   login,
-  profile
+  profile,
+  logout
 }
 
 export default AuthService

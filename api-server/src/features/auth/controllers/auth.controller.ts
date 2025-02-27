@@ -59,11 +59,38 @@ const profile = async (req: Request, res: Response): Promise<any> => {
   })
 }
 
+const logout = async (req: Request, res: Response): Promise<any> => {
+
+  const cookies = req.cookies
+  if (cookies[Config.COOKIE_NAME] === undefined) {
+    throw new AuthenticationError("Invalid Action")
+  }
+
+
+  await AuthService.logout(req.cookies[Config.COOKIE_NAME])
+
+  res.cookie(Config.COOKIE_NAME, "", {
+    httpOnly: true,
+    secure: true,
+    maxAge: 0,
+    expires: new Date("2020/01/01"), // just setting it to a date in the past to expire it
+    sameSite: 'none',
+    // domain:"localhost",
+    path: "/"
+  })
+
+  return res.status(200).json({
+    message: "Logged out successfully",
+    success: true,
+  })
+}
+
 
 const AuthController = {
   signup,
   login,
-  profile
+  profile,
+  logout
 }
 
 export default AuthController

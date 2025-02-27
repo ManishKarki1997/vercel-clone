@@ -1,18 +1,34 @@
 import { User } from '@/features/app/types/auth.types'
-import { profileAction } from '@/features/home/actions/auth.action'
-import { useQuery } from '@tanstack/react-query'
+import { logoutAction, profileAction } from '@/features/home/actions/auth.action'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { LogOutIcon, SettingsIcon, UserRoundIcon } from 'lucide-react'
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu'
+import { toast } from 'sonner'
+import { useNavigate } from 'react-router'
+import { useAuth } from '@/hooks/use-auth'
 
 function ProfileAvatar() {
 
-  const { data: profileData, isFetching: isFetchingUser } = useQuery({
-    queryFn: profileAction,
-    queryKey: ['profile'],
-  })
+  const navigate = useNavigate();
+  const queryClient = useQueryClient()
 
-  const user: User | null = profileData
+  const { user } = useAuth()
+
+  const logoutMutation = useMutation({
+    mutationFn: logoutAction,
+    onSuccess: () => {
+      localStorage.removeItem("isLoggedIn")
+      toast.success("Logged out successfully")
+      queryClient.invalidateQueries({ queryKey: ['profile'] })
+      setTimeout(() => {
+        navigate("/")
+      }, 1000);
+    },
+    onError: err => {
+      console.log("error logging out ", err)
+    }
+  })
 
   return (
     <DropdownMenu>
@@ -32,7 +48,7 @@ function ProfileAvatar() {
           Settings
         </DropdownMenuItem>
 
-        <DropdownMenuItem className='text-red-500'>
+        <DropdownMenuItem className='text-red-500' onClick={() => logoutMutation.mutate()}>
           <LogOutIcon />
           Logout
         </DropdownMenuItem>
