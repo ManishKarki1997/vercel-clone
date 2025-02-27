@@ -4,7 +4,7 @@ import { generateSlug } from "random-word-slugs";
 import ProjectService from "../services/project.service";
 import { Config } from "../../../config/env";
 
-const runProject = async (req: Request, res: Response) => {
+const runProject = async (req: Request, res: Response): Promise<any> => {
 
   try {
     const slug = generateSlug()
