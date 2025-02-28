@@ -7,9 +7,13 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { createProjectAction } from '../actions/project.action';
+import { toast } from 'sonner';
+import { AxiosError } from 'axios';
 
 type Props = {
-  onClose?: () => void
+  onClose: () => void
   isOpen: boolean;
 }
 
@@ -17,6 +21,22 @@ function AddProject({
   isOpen,
   onClose
 }: Props) {
+
+  const queryClient = useQueryClient()
+
+
+  const mutation = useMutation({
+    mutationFn: createProjectAction,
+    onSuccess: () => {
+      toast.success("Project created Successfully")
+
+      queryClient.invalidateQueries({ queryKey: ['projects'] })
+      onClose()
+    },
+    onError: (err: AxiosError) => {
+      toast.error(err?.response?.data?.message || "Something went wrong while creating the project")
+    },
+  })
 
   const form = useForm<z.infer<typeof AddProjectSchema>>({
     resolver: zodResolver(AddProjectSchema),
@@ -28,7 +48,7 @@ function AddProject({
 
 
   function onSubmit(values: z.infer<typeof AddProjectSchema>) {
-    // mutation.mutate(values)
+    mutation.mutate(values)
   }
 
 

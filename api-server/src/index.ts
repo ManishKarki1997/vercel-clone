@@ -7,11 +7,14 @@ import cookieParser from 'cookie-parser'
 import { Config } from "./config/env";
 import Router from "./route";
 import { errorHandler } from "./utils/error-handler";
+import type { SupabaseJWTUser } from "./types/supabase.type";
 
 dotenv.config();
 
 const app = express();
 const port = Config.PORT
+
+
 
 app.use(cors({
   origin: Config.FRONTEND_URLS,

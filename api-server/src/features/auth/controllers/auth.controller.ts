@@ -1,4 +1,5 @@
 import type { Request, Response } from "express";
+import jwt from 'jsonwebtoken'
 
 import AuthService from "../services/auth.service";
 import { Config } from "../../../config/env";
@@ -49,7 +50,6 @@ const profile = async (req: Request, res: Response): Promise<any> => {
     throw new AuthenticationError("Session expired. Please login again")
   }
 
-
   const user = await AuthService.profile(req.cookies[Config.COOKIE_NAME])
 
   return res.status(200).json({
@@ -60,7 +60,6 @@ const profile = async (req: Request, res: Response): Promise<any> => {
 }
 
 const logout = async (req: Request, res: Response): Promise<any> => {
-
   const cookies = req.cookies
   if (cookies[Config.COOKIE_NAME] === undefined) {
     throw new AuthenticationError("Invalid Action")

@@ -2,6 +2,9 @@ import { RunTaskCommand } from "@aws-sdk/client-ecs"
 import { Config } from "../../../config/env"
 import type { RunProjectPayload } from "../types/project.type"
 import { ecsClient } from "../../../utils/aws"
+import type { AddProject } from "../schema/project.schema"
+import { database } from "../../../db/drizzle"
+import { projects } from "../../../db/schema"
 
 const runProject = async (payload: RunProjectPayload) => {
 
@@ -57,8 +60,23 @@ const runProject = async (payload: RunProjectPayload) => {
 
 }
 
+const createProject = async (payload: AddProject) => {
+  const createPayload = {
+    name: payload.name,
+    description: payload.description,
+    userId: payload.userId!,
+    createdAt: new Date(),
+    updatedAt: new Date()
+  }
+
+  const project = await database
+    .insert(projects)
+    .values(createPayload)
+}
+
 const ProjectService = {
-  runProject
+  runProject,
+  createProject
 }
 
 export default ProjectService
