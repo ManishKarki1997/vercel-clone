@@ -21,9 +21,7 @@ function ProfileAvatar() {
       localStorage.removeItem("isLoggedIn")
       toast.success("Logged out successfully")
       queryClient.invalidateQueries({ queryKey: ['profile'] })
-      setTimeout(() => {
-        navigate("/")
-      }, 1000);
+      navigate("/")
     },
     onError: err => {
       console.log("error logging out ", err)

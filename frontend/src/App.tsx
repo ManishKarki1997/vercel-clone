@@ -17,6 +17,7 @@ import AuthGuard from "./lib/auth-guard";
 import AppWrapper from "./features/app/components/app-wrapper";
 import { AuthProvider } from "./providers/auth-provider";
 import { useAuth } from "./hooks/use-auth";
+import ProjectsList from "./features/projects/pages/projects-list";
 
 
 
@@ -54,6 +55,12 @@ const AppContent = () => {
         <Route path="" element={
           <AuthGuard>
             <AppDashboard />
+          </AuthGuard>
+        }
+        />
+        <Route path="projects" element={
+          <AuthGuard>
+            <ProjectsList />
           </AuthGuard>
         }
         />

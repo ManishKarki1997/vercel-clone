@@ -4,12 +4,13 @@ import { Outlet } from 'react-router'
 
 function AppWrapper() {
   return (
-    <div>
+    <div className='bg-muted'>
       <AppHeader />
 
-      <main className='px-4 py-4  bg-secondary-foreground min-h-[calc(100vh-70px)]'>
+      <main className='min-h-[calc(100vh-70px)]'>
         <Outlet />
       </main>
+
     </div>
   )
 }

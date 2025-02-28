@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+
 import { Config } from './env'
 
 const supabaseUrl = Config.SUPABASE_PROJECT_URL
