@@ -7,3 +7,11 @@ export const AddProjectSchema = z.object({
 })
 
 export type AddProject = z.infer<typeof AddProjectSchema>
+
+export const ListProjectsSchema = z.object({
+  userId: z.string().nullable(),
+  page: z.number().default(1),
+  limit: z.number().default(1)
+})
+
+export type ListProjects = z.infer<typeof ListProjectsSchema>

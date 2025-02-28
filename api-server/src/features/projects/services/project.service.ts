@@ -2,9 +2,11 @@ import { RunTaskCommand } from "@aws-sdk/client-ecs"
 import { Config } from "../../../config/env"
 import type { RunProjectPayload } from "../types/project.type"
 import { ecsClient } from "../../../utils/aws"
-import type { AddProject } from "../schema/project.schema"
+import type { AddProject, ListProjects } from "../schema/project.schema"
 import { database } from "../../../db/drizzle"
-import { projects } from "../../../db/schema"
+import { profiles, projects } from "../../../db/schema"
+import { getRange } from "../../../utils/utils"
+import { desc, eq } from "drizzle-orm"
 
 const runProject = async (payload: RunProjectPayload) => {
 
@@ -74,9 +76,42 @@ const createProject = async (payload: AddProject) => {
     .values(createPayload)
 }
 
+const listProjects = async (payload: ListProjects) => {
+
+  await new Promise(resolve => setTimeout(() => resolve(1), 2000))
+
+
+
+  const projectList = await database
+    .select({
+      name: projects.name,
+      description: projects.description,
+      createdAt: projects.createdAt,
+      updatedAt: projects.updatedAt,
+      userId: profiles.id,
+      id: projects.id
+    })
+    .from(projects)
+    .leftJoin(profiles, eq(projects.userId, profiles.id))
+    .where(
+      eq(profiles.id, payload.userId!)
+    )
+    .limit(+payload.limit)
+    .offset(((+payload.page) - 1) * +payload.limit)
+    .orderBy(desc(projects.createdAt))
+
+  return {
+    projects: projectList,
+    page: +payload.page,
+    limit: +payload.limit,
+    hasNextPage: projectList.length >= +payload.limit
+  }
+}
+
 const ProjectService = {
   runProject,
-  createProject
+  createProject,
+  listProjects
 }
 
 export default ProjectService

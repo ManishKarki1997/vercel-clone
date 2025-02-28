@@ -44,9 +44,29 @@ const createProject = async (req: Request, res: Response): Promise<any> => {
   }
 }
 
+const listProjects = async (req: Request, res: Response): Promise<any> => {
+  const userId = req.user?.sub
+
+  try {
+
+    const projects = await ProjectService.listProjects({ ...req.query, userId })
+
+    return res.status(200).json({
+      message: "Projects listed successfully",
+      data: projects
+    })
+  } catch (error) {
+    return res.status(500).json({
+      status: "Error",
+      error: error?.message || "Something went wrong"
+    })
+  }
+}
+
 const ProjectController = {
   runProject,
-  createProject
+  createProject,
+  listProjects
 }
 
 export default ProjectController
