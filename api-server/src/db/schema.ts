@@ -43,6 +43,7 @@ export const deployments = pgTable("deployments", {
     .references(() => projects.id, { onDelete: "cascade" }),
   status: projectDeploymentStatusEnums("status").default("Started"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+  completedAt: timestamp("completed_at"),
   userId: uuid("user_id")
     .notNull()
     .references(() => profiles.id, { onDelete: "cascade" }),

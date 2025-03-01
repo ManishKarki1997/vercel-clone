@@ -86,54 +86,54 @@ const deployProject = async (payload: DeployProject) => {
   }
 
 
-  const command = new RunTaskCommand({
-    cluster: Config.AWS_CLUSTER_ARN,
-    taskDefinition: Config.AWS_TASK_ARN,
-    launchType: "FARGATE",
-    count: 1,
-    networkConfiguration: {
-      awsvpcConfiguration: {
-        subnets: Config.AWS_TASK_SUBNETS,
-        securityGroups: [Config.AWS_TASK_SECURITY_GROUP],
-        assignPublicIp: "ENABLED",
-      }
-    },
-    overrides: {
-      containerOverrides: [
-        {
-          name: "builder-image",
-          environment: [
-            {
-              name: "AWS_REGION",
-              value: Config.AWS_REGION
-            },
-            {
-              name: "AWS_ACCESS_KEY",
-              value: Config.AWS_ACCESS_KEY
-            },
-            {
-              name: "AWS_SECRET_ACCESS_KEY",
-              value: Config.AWS_SECRET_ACCESS_KEY
-            },
-            {
-              name: "AWS_S3_BUCKET",
-              value: Config.AWS_S3_BUCKET
-            },
-            {
-              name: "GIT_REPOSITORY_URL",
-              value: runProjectPayload.gitRepoUrl
-            },
-            {
-              name: "PROJECT_ID",
-              value: runProjectPayload.projectId
-            },
-          ]
-        }
-      ]
-    }
-  })
+  // const command = new RunTaskCommand({
+  //   cluster: Config.AWS_CLUSTER_ARN,
+  //   taskDefinition: Config.AWS_TASK_ARN,
+  //   launchType: "FARGATE",
+  //   count: 1,
+  //   networkConfiguration: {
+  //     awsvpcConfiguration: {
+  //       subnets: Config.AWS_TASK_SUBNETS,
+  //       securityGroups: [Config.AWS_TASK_SECURITY_GROUP],
+  //       assignPublicIp: "ENABLED",
+  //     }
+  //   },
+  //   overrides: {
+  //     containerOverrides: [
+  //       {
+  //         name: "builder-image",
+  //         environment: [
+  //           {
+  //             name: "AWS_REGION",
+  //             value: Config.AWS_REGION
+  //           },
+  //           {
+  //             name: "AWS_ACCESS_KEY",
+  //             value: Config.AWS_ACCESS_KEY
+  //           },
+  //           {
+  //             name: "AWS_SECRET_ACCESS_KEY",
+  //             value: Config.AWS_SECRET_ACCESS_KEY
+  //           },
+  //           {
+  //             name: "AWS_S3_BUCKET",
+  //             value: Config.AWS_S3_BUCKET
+  //           },
+  //           {
+  //             name: "GIT_REPOSITORY_URL",
+  //             value: runProjectPayload.gitRepoUrl
+  //           },
+  //           {
+  //             name: "PROJECT_ID",
+  //             value: runProjectPayload.projectId
+  //           },
+  //         ]
+  //       }
+  //     ]
+  //   }
+  // })
 
-  await ecsClient.send(command)
+  // await ecsClient.send(command)
 
   const deploymentUrl = getDeploymentUrl(runProjectPayload.projectId)
 
@@ -141,7 +141,8 @@ const deployProject = async (payload: DeployProject) => {
     id: deployment.id,
     status: "Running",
     userId: payload.userId,
-    deploymentUrl
+    deploymentUrl,
+    completedAt: new Date()
   })
 
   await patchProject({

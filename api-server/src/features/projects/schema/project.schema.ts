@@ -48,6 +48,7 @@ export const PatchDeploymentSchema = z.object({
   deploymentUrl: z.string().optional(),
   commitHash: z.string().optional(),
   commitMessage: z.string().optional(),
+  completedAt: z.date().optional()
 })
 export type PatchDeployment = z.infer<typeof PatchDeploymentSchema>
 
