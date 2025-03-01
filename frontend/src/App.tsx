@@ -18,6 +18,7 @@ import AppWrapper from "./features/app/components/app-wrapper";
 import { AuthProvider } from "./providers/auth-provider";
 import { useAuth } from "./hooks/use-auth";
 import ProjectsList from "./features/projects/pages/projects-list";
+import ProjectDetail from "./features/projects/pages/project-detail";
 
 
 
@@ -61,6 +62,13 @@ const AppContent = () => {
         <Route path="projects" element={
           <AuthGuard>
             <ProjectsList />
+          </AuthGuard>
+        }
+        />
+
+        <Route path="projects/:slug" element={
+          <AuthGuard>
+            <ProjectDetail />
           </AuthGuard>
         }
         />

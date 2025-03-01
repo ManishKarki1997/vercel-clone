@@ -8,47 +8,65 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { createProjectAction } from '../actions/project.action';
+import { createProjectAction, editProjectAction } from '../actions/project.action';
 import { toast } from 'sonner';
 import { AxiosError } from 'axios';
+import { Project } from '../types/project.types';
 
 type Props = {
   onClose: () => void
   isOpen: boolean;
+  project?: Project | null;
 }
 
-function AddProject({
+function ManageProject({
   isOpen,
-  onClose
+  onClose,
+  project
 }: Props) {
 
   const queryClient = useQueryClient()
 
 
   const mutation = useMutation({
-    mutationFn: createProjectAction,
+    mutationFn: project ? editProjectAction : createProjectAction,
     onSuccess: () => {
-      toast.success("Project created Successfully")
+      toast.success(
+        project ? "Project updated Successfully" :
+          "Project created Successfully")
 
       queryClient.invalidateQueries({ queryKey: ['projects'] })
+
+      if (project) {
+        queryClient.invalidateQueries({ queryKey: ['project-detail', { slug: project?.slug }] })
+      }
+
       onClose()
     },
     onError: (err: AxiosError) => {
-      toast.error(err?.response?.data?.message || "Something went wrong while creating the project")
+      toast.error(err?.response?.data?.message || `Something went wrong while ${project ? 'updating' : 'creating'} the project`)
     },
   })
 
   const form = useForm<z.infer<typeof AddProjectSchema>>({
     resolver: zodResolver(AddProjectSchema),
     defaultValues: {
-      name: "",
-      description: ""
+      name: project ? project.name : "",
+      description: project ? project.description : "",
+      gitUrl: project ? project.gitUrl : ""
     },
   })
 
 
   function onSubmit(values: z.infer<typeof AddProjectSchema>) {
-    mutation.mutate(values)
+
+    const payload = JSON.parse(JSON.stringify({ ...values }))
+
+    if (project) {
+      payload.id = project.id
+      payload.slug = project.slug
+    }
+    mutation.mutate(payload)
   }
 
 
@@ -56,7 +74,7 @@ function AddProject({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Create Project</DialogTitle>
+          <DialogTitle>{project ? "Update" : "Create"} Project</DialogTitle>
         </DialogHeader>
 
         <div className='pt-4'>
@@ -80,6 +98,20 @@ function AddProject({
 
                 <FormField
                   control={form.control}
+                  name="gitUrl"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Git URL</FormLabel>
+                      <FormControl>
+                        <Input type="url"  {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
                   name="description"
                   render={({ field }) => (
                     <FormItem>
@@ -95,7 +127,7 @@ function AddProject({
 
               <div className='flex items-center gap-2 mt-6'>
                 <Button type="submit">
-                  Create
+                  {project ? "Update" : "Create"}
                 </Button>
                 <Button type="button" variant="ghost" onClick={onClose}>
                   Cancel
@@ -110,4 +142,4 @@ function AddProject({
   )
 }
 
-export default AddProject
+export default ManageProject

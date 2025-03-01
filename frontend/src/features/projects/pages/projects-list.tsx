@@ -7,7 +7,7 @@ import AppContainer from '@/features/app/components/app-container';
 import AppPageHeader from '@/features/app/components/app-page-header';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { listProjectsAction } from '../actions/project.action';
-import AddProject from '../components/add-project';
+import ManageProject from '../components/manage-project';
 import ProjectCard from '../components/project-card';
 import { ProjectPage } from '../types/project.types';
 import ProjectsListSkeleton from '../components/skeletons/projects-list-skeleton';
@@ -97,7 +97,7 @@ function ProjectsList() {
         }
 
 
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 3xl:grid-cols-4 gap-4">
           {
             isFetching &&
             !isFetchingNextPage &&
@@ -106,6 +106,7 @@ function ProjectsList() {
 
           {
 
+            !isFetching &&
             projectPages
               .map((projectPage, idx) => (
                 <React.Fragment key={idx}>
@@ -141,7 +142,7 @@ function ProjectsList() {
 
       {
         isAddProjectModalOpen &&
-        <AddProject isOpen={isAddProjectModalOpen} onClose={onCloseAddProject} />
+        <ManageProject isOpen={isAddProjectModalOpen} onClose={onCloseAddProject} />
       }
     </div>
   )

@@ -44,6 +44,25 @@ const createProject = async (req: Request, res: Response): Promise<any> => {
   }
 }
 
+const updateProject = async (req: Request, res: Response): Promise<any> => {
+  const userId = req.user?.sub
+
+  try {
+
+    const project = await ProjectService.updateProject({ ...req.body, userId })
+
+    return res.status(200).json({
+      message: "Project updated successfully",
+      data: project
+    })
+  } catch (error) {
+    return res.status(500).json({
+      status: "Error",
+      error: error?.message || "Something went wrong"
+    })
+  }
+}
+
 const listProjects = async (req: Request, res: Response): Promise<any> => {
   const userId = req.user?.sub
 
@@ -63,10 +82,30 @@ const listProjects = async (req: Request, res: Response): Promise<any> => {
   }
 }
 
+const projectDetail = async (req: Request, res: Response): Promise<any> => {
+  const userId = req.user?.sub
+
+  try {
+    const project = await ProjectService.projectDetail({ ...req.query, userId })
+
+    return res.status(200).json({
+      message: "Projects listed successfully",
+      data: project
+    })
+  } catch (error) {
+    return res.status(500).json({
+      status: "Error",
+      error: error?.message || "Something went wrong"
+    })
+  }
+}
+
 const ProjectController = {
   runProject,
   createProject,
-  listProjects
+  updateProject,
+  listProjects,
+  projectDetail
 }
 
 export default ProjectController
