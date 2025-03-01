@@ -1,6 +1,6 @@
 {
-  "id": "1c402b6c-9f70-43d5-91f6-b89c7c3c9d37",
-  "prevId": "6c8440f6-a58f-4741-aa5a-f4a5e2867169",
+  "id": "2a69c7dd-5e54-4772-a655-eeff82a59445",
+  "prevId": "a29baccf-1b26-4f3f-90b9-51a4206aea62",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -27,7 +27,7 @@
           "typeSchema": "public",
           "primaryKey": false,
           "notNull": false,
-          "default": "'Running'"
+          "default": "'Started'"
         },
         "created_at": {
           "name": "created_at",
@@ -36,11 +36,23 @@
           "notNull": true,
           "default": "now()"
         },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "deployment_url": {
+          "name": "deployment_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
         "commit_hash": {
           "name": "commit_hash",
           "type": "varchar(50)",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "commit_message": {
           "name": "commit_message",
@@ -57,6 +69,19 @@
           "tableTo": "projects",
           "columnsFrom": [
             "project_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "deployments_user_id_profiles_id_fk": {
+          "name": "deployments_user_id_profiles_id_fk",
+          "tableFrom": "deployments",
+          "tableTo": "profiles",
+          "columnsFrom": [
+            "user_id"
           ],
           "columnsTo": [
             "id"
@@ -176,6 +201,12 @@
           "notNull": false,
           "default": "'Active'"
         },
+        "deployment_url": {
+          "name": "deployment_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp",
@@ -258,6 +289,7 @@
       "name": "deployment_status",
       "schema": "public",
       "values": [
+        "Started",
         "Running",
         "Completed",
         "Failed"

@@ -1,6 +1,6 @@
 export type RunProjectPayload = {
-  gitRepoUrl: string;
-  projectId: string;
+  slug: string;
+  userId: string;
 }
 
 

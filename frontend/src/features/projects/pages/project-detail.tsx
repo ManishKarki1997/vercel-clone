@@ -5,6 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { InfoIcon, PlayIcon, SettingsIcon } from 'lucide-react'
 import ProjectBasicInfo from '../components/detail/project-basic-info'
 import { ProjectDetailProvider } from '../providers/project-detail-provider'
+import ProjectDeployments from '../components/detail/project-deployments'
 
 function ProjectDetail() {
   return (
@@ -32,7 +33,9 @@ function ProjectDetail() {
             <ProjectBasicInfo />
           </TabsContent>
 
-          <TabsContent value="deployments" className='py-4'>Project Deployments</TabsContent>
+          <TabsContent value="deployments" className='py-4'>
+            <ProjectDeployments />
+          </TabsContent>
 
           <TabsContent value="settings" className='py-4'>Project Settings</TabsContent>
 

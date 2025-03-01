@@ -47,7 +47,6 @@ function ProjectsList() {
   const projectPages: ProjectPage[] = (projectsData?.pages || []) as any
   const hasProjects = projectPages?.some(project => project.projects.length > 0)
 
-  console.log("projectsData", projectsData, hasNextPage)
 
   React.useEffect(() => {
     if (!isLoadMoreElementVisible) return;

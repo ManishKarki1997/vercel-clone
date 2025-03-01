@@ -1,6 +1,6 @@
 import queryString from "query-string"
 import { api } from "@/lib/api"
-import { AddProject, EditProject, ListProjects, ProjectDetail } from "../schema/project.schema"
+import { AddProject, DeployProject, EditProject, ListProjects, ProjectDetail } from "../schema/project.schema"
 
 export const createProjectAction = (payload: AddProject) => {
   return api.post(`/projects`, payload, { withCredentials: true })
@@ -8,6 +8,10 @@ export const createProjectAction = (payload: AddProject) => {
 
 export const editProjectAction = (payload: EditProject) => {
   return api.put(`/projects/${payload.id}`, payload, { withCredentials: true })
+}
+
+export const deployProjectAction = (payload: DeployProject) => {
+  return api.post(`/projects/${payload.slug}/deploy`, payload, { withCredentials: true })
 }
 
 export const listProjectsAction = async (payload: ListProjects) => {

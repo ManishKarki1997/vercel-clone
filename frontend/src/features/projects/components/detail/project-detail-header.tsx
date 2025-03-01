@@ -3,6 +3,7 @@ import { ArchiveIcon, PencilLineIcon } from 'lucide-react'
 import React from 'react'
 import { useProjectDetail } from '../../providers/project-detail-provider'
 import ManageProject from '../manage-project'
+import { useSearchParams } from 'react-router'
 
 function ProjectDetailHeader() {
 
@@ -11,10 +12,20 @@ function ProjectDetailHeader() {
   const {
     project
   } = useProjectDetail()
+  const [_, setSearchParams] = useSearchParams()
+
 
 
   const onCloseAddProject = () => {
     setIsEditProjectModalOpen(false)
+  }
+
+  const onEditProjectSuccess = (values: any) => {
+    if (values.slug !== project?.slug) {
+      // if the slug changes, we're refetching the project detail using the slug
+      // so we need updated slug value which comes the url
+      setSearchParams({ slug: values.slug }, { replace: true })
+    }
   }
 
 
@@ -47,6 +58,7 @@ function ProjectDetailHeader() {
             isOpen={isEditProjectModalOpen}
             onClose={onCloseAddProject}
             project={project}
+            onSuccessCallback={onEditProjectSuccess}
           />
         }
 

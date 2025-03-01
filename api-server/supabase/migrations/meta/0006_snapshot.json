@@ -1,6 +1,6 @@
 {
-  "id": "1c402b6c-9f70-43d5-91f6-b89c7c3c9d37",
-  "prevId": "6c8440f6-a58f-4741-aa5a-f4a5e2867169",
+  "id": "79cb7b0a-d37c-427f-bd9d-abec62be9902",
+  "prevId": "fc723f10-aba2-4ffc-8a31-8c884fb7b324",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -27,7 +27,7 @@
           "typeSchema": "public",
           "primaryKey": false,
           "notNull": false,
-          "default": "'Running'"
+          "default": "'Started'"
         },
         "created_at": {
           "name": "created_at",
@@ -36,11 +36,17 @@
           "notNull": true,
           "default": "now()"
         },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
         "commit_hash": {
           "name": "commit_hash",
           "type": "varchar(50)",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "commit_message": {
           "name": "commit_message",
@@ -57,6 +63,19 @@
           "tableTo": "projects",
           "columnsFrom": [
             "project_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "deployments_user_id_profiles_id_fk": {
+          "name": "deployments_user_id_profiles_id_fk",
+          "tableFrom": "deployments",
+          "tableTo": "profiles",
+          "columnsFrom": [
+            "user_id"
           ],
           "columnsTo": [
             "id"
@@ -258,6 +277,7 @@
       "name": "deployment_status",
       "schema": "public",
       "values": [
+        "Started",
         "Running",
         "Completed",
         "Failed"

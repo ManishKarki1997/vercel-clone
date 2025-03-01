@@ -2,7 +2,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { AddProjectSchema } from '../schema/project.schema';
+import { AddProjectSchema, EditProjectSchema } from '../schema/project.schema';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -17,12 +17,14 @@ type Props = {
   onClose: () => void
   isOpen: boolean;
   project?: Project | null;
+  onSuccessCallback?: (values: any) => void
 }
 
 function ManageProject({
   isOpen,
   onClose,
-  project
+  project,
+  onSuccessCallback
 }: Props) {
 
   const queryClient = useQueryClient()
@@ -42,31 +44,37 @@ function ManageProject({
       }
 
       onClose()
+      if (onSuccessCallback) {
+        onSuccessCallback(form.getValues())
+      }
     },
     onError: (err: AxiosError) => {
-      toast.error(err?.response?.data?.message || `Something went wrong while ${project ? 'updating' : 'creating'} the project`)
+      toast.error(err?.response?.data?.error || `Something went wrong while ${project ? 'updating' : 'creating'} the project`)
     },
   })
 
-  const form = useForm<z.infer<typeof AddProjectSchema>>({
-    resolver: zodResolver(AddProjectSchema),
+  const isEditMode = !!project
+  const relevantFormSchema = isEditMode ? EditProjectSchema : AddProjectSchema;
+
+
+  const form = useForm<z.infer<typeof relevantFormSchema>>({
+    resolver: zodResolver(relevantFormSchema),
     defaultValues: {
       name: project ? project.name : "",
       description: project ? project.description : "",
-      gitUrl: project ? project.gitUrl : ""
+      gitUrl: project ? project.gitUrl : "",
+      ...(isEditMode && {
+        slug: project ? project.slug : "",
+      }),
+      ...(isEditMode && {
+        id: project ? project.id : "",
+      }),
     },
   })
 
-
-  function onSubmit(values: z.infer<typeof AddProjectSchema>) {
-
-    const payload = JSON.parse(JSON.stringify({ ...values }))
-
-    if (project) {
-      payload.id = project.id
-      payload.slug = project.slug
-    }
-    mutation.mutate(payload)
+  console.log("form errors", form.formState.errors)
+  function onSubmit(values: z.infer<typeof relevantFormSchema>) {
+    mutation.mutate(values)
   }
 
 
@@ -109,6 +117,25 @@ function ManageProject({
                     </FormItem>
                   )}
                 />
+
+                {
+                  project &&
+                  <FormField
+                    control={form.control}
+                    // in edit mode slug will be present, but for some reason form is complaining
+                    // @ts-expect-error
+                    name="slug"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Slug</FormLabel>
+                        <FormControl>
+                          <Input type="text"  {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                }
 
                 <FormField
                   control={form.control}

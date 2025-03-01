@@ -66,7 +66,7 @@ const AppContent = () => {
         }
         />
 
-        <Route path="projects/:slug" element={
+        <Route path="projects/:id" element={
           <AuthGuard>
             <ProjectDetail />
           </AuthGuard>

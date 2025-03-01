@@ -2,15 +2,88 @@ import { RunTaskCommand } from "@aws-sdk/client-ecs"
 import { Config } from "../../../config/env"
 import type { RunProjectPayload } from "../types/project.type"
 import { ecsClient } from "../../../utils/aws"
-import type { AddProject, EditProject, ListProjects, ProjectDetail } from "../schema/project.schema"
+import type { AddProject, DeployProject, EditProject, ListProjects, PatchDeployment, PatchProject, ProjectDetail } from "../schema/project.schema"
 import { database } from "../../../db/drizzle"
-import { profiles, projects } from "../../../db/schema"
-import { getRange } from "../../../utils/utils"
-import { desc, eq } from "drizzle-orm"
+import { deployments, profiles, projects } from "../../../db/schema"
+import { getDeploymentUrl, getRange } from "../../../utils/utils"
+import { and, desc, eq, or } from "drizzle-orm"
 import { slugify } from "../../../utils/slugify"
-import { UserInputError } from "../../../utils/error"
+import { ForbiddenError, UserInputError } from "../../../utils/error"
 
-const runProject = async (payload: RunProjectPayload) => {
+const updateProjectDeployment = async (payload: PatchDeployment) => {
+  await
+    database
+      .update(deployments)
+      .set(payload)
+      .where(
+        and(
+          eq(deployments.id, payload.id),
+          eq(deployments.userId, payload.userId)
+        )
+      )
+}
+
+const patchProject = async (payload: PatchProject) => {
+  await
+    database
+      .update(projects)
+      .set(payload)
+      .where(
+        and(
+          eq(projects.slug, payload.slug),
+          eq(projects.userId, payload.userId)
+        )
+      )
+}
+
+const deployProject = async (payload: DeployProject) => {
+
+  // create deployment
+  const project = await
+    getProjectDetail({ slug: payload.slug })
+
+
+  if (!project) {
+    throw new UserInputError("Project does not exist")
+  }
+
+  if (project.userId !== payload.userId) {
+    throw new ForbiddenError("You do not own this project")
+  }
+
+  if (project.status !== "Active") {
+    throw new ForbiddenError("Project is not active. Please activate the project first")
+  }
+
+  const existingDeployment = await
+    database
+      .select({})
+      .from(deployments)
+      .where(
+        and(
+          eq(deployments.projectId, project.id),
+          or(eq(deployments.status, "Running"), eq(deployments.status, "Started"))
+        )
+      )
+
+  if (existingDeployment.length > 0) {
+    throw new ForbiddenError("Please cancel the previous deployment before redeploying")
+  }
+
+
+  const [deployment] = await
+    database
+      .insert(deployments)
+      .values({
+        projectId: project.id,
+        status: "Running",
+        userId: payload.userId
+      }).returning()
+
+  const runProjectPayload = {
+    gitRepoUrl: project.gitUrl,
+    projectId: project.slug
+  }
 
 
   const command = new RunTaskCommand({
@@ -48,11 +121,11 @@ const runProject = async (payload: RunProjectPayload) => {
             },
             {
               name: "GIT_REPOSITORY_URL",
-              value: payload.gitRepoUrl
+              value: runProjectPayload.gitRepoUrl
             },
             {
               name: "PROJECT_ID",
-              value: payload.projectId
+              value: runProjectPayload.projectId
             },
           ]
         }
@@ -61,6 +134,21 @@ const runProject = async (payload: RunProjectPayload) => {
   })
 
   await ecsClient.send(command)
+
+  const deploymentUrl = getDeploymentUrl(runProjectPayload.projectId)
+
+  await updateProjectDeployment({
+    id: deployment.id,
+    status: "Running",
+    userId: payload.userId,
+    deploymentUrl
+  })
+
+  await patchProject({
+    slug: payload.slug,
+    userId: payload.userId,
+    deploymentUrl
+  })
 
 }
 
@@ -96,9 +184,10 @@ const updateProject = async (payload: EditProject) => {
 
 
   const existingProjectsWithSlug = await database
-    .select({ name: projects.name, id: projects.id })
+    .select({ name: projects.name, id: projects.id, slug: projects.slug })
     .from(projects)
     .where(eq(projects.slug, payload.slug))
+
 
   if (existingProjectsWithSlug.length > 0 && (existingProjectsWithSlug[0].id) !== (payload.id)) {
     throw new UserInputError("Project with this slug already exists")
@@ -156,7 +245,7 @@ const listProjects = async (payload: ListProjects) => {
   }
 }
 
-const projectDetail = async (payload: ProjectDetail) => {
+const getProjectDetail = async (payload: ProjectDetail) => {
   const project = await
     database
       .select({
@@ -177,11 +266,11 @@ const projectDetail = async (payload: ProjectDetail) => {
 }
 
 const ProjectService = {
-  runProject,
+  deployProject,
   createProject,
   updateProject,
   listProjects,
-  projectDetail
+  projectDetail: getProjectDetail
 }
 
 export default ProjectService

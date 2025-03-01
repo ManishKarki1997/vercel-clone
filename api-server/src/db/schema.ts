@@ -3,6 +3,7 @@ import { sql } from "drizzle-orm";
 import * as t from "drizzle-orm/pg-core";
 
 export const projectStatusEnums = pgEnum("status", ['Active', 'Archived'])
+export const projectDeploymentStatusEnums = pgEnum("deployment_status", ['Started', 'Running', 'Completed', 'Failed'])
 
 // Reference Supabase auth.users table
 export const projects = pgTable("projects", {
@@ -16,6 +17,7 @@ export const projects = pgTable("projects", {
   gitUrl: varchar("git_url", { length: 500 }).notNull(),
   branch: varchar("branch", { length: 255 }).default("main"), // useful if i integrate github later
   status: projectStatusEnums("status").default("Active"),
+  deploymentUrl: text("deployment_url"), // latest deployment url. in this format `https://${projectSlug}:${reverseProxyUrl}.com
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 },
@@ -31,4 +33,22 @@ export const profiles = pgTable("profiles", {
   fullName: text("full_name"),
   avatarUrl: text("avatar_url"),
   website: text(),
+});
+
+
+export const deployments = pgTable("deployments", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  projectId: uuid("project_id")
+    .notNull()
+    .references(() => projects.id, { onDelete: "cascade" }),
+  status: projectDeploymentStatusEnums("status").default("Started"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => profiles.id, { onDelete: "cascade" }),
+  deploymentUrl: text("deployment_url"), // in this format `https://${projectSlug}:${reverseProxyUrl}.com
+
+  // could be optional if github integration isn't present
+  commitHash: varchar("commit_hash", { length: 50 }),
+  commitMessage: text("commit_message"),
 });

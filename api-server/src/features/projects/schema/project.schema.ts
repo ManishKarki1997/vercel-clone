@@ -16,6 +16,13 @@ export const EditProjectSchema = AddProjectSchema.extend({
 export type EditProject = z.infer<typeof EditProjectSchema>
 
 
+export const DeployProjectSchema = z.object({
+  slug: z.string(),
+  userId: z.string()
+})
+export type DeployProject = z.infer<typeof DeployProjectSchema>
+
+
 export const ListProjectsSchema = z.object({
   userId: z.string().nullable(),
   page: z.number().default(1),
@@ -28,6 +35,33 @@ export type ListProjects = z.infer<typeof ListProjectsSchema>
 
 export const ProjectDetailSchema = z.object({
   slug: z.string(),
+  id: z.string().optional()
 })
 
 export type ProjectDetail = z.infer<typeof ProjectDetailSchema>
+
+
+export const PatchDeploymentSchema = z.object({
+  userId: z.string(),
+  id: z.string(),
+  status: z.enum(["Started", "Running", "Completed", "Failed"]),
+  deploymentUrl: z.string().optional(),
+  commitHash: z.string().optional(),
+  commitMessage: z.string().optional(),
+})
+export type PatchDeployment = z.infer<typeof PatchDeploymentSchema>
+
+
+
+export const PatchProjectSchema = z.object({
+  userId: z.string(),
+  id: z.string().optional(),
+  status: z.enum(["Active", "Archived"]).optional(),
+  deploymentUrl: z.string().optional(),
+  name: z.string().min(2, "Name must be at least 2 characters long").max(256, "Name must be less than 256 characters").optional(),
+  gitUrl: z.string().url("Git repo url must be present").optional(),
+  description: z.string().max(1000, "Description must be less than 1000 characters").optional(),
+  slug: z.string().optional()
+})
+export type PatchProject = z.infer<typeof PatchProjectSchema>
+

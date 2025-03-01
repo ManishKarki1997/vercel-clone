@@ -1,0 +1,1 @@
+ALTER TYPE "public"."deployment_status" ADD VALUE 'Started' BEFORE 'Running';--> statement-breakpoint

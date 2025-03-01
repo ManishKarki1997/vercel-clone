@@ -11,10 +11,14 @@ export type AddProject = z.infer<typeof AddProjectSchema>
 export const EditProjectSchema = AddProjectSchema.extend({
   id: z.string(),
   slug: z.string()
-
 })
 export type EditProject = z.infer<typeof EditProjectSchema>
 
+
+export const DeployProjectSchema = z.object({
+  slug: z.string()
+})
+export type DeployProject = z.infer<typeof DeployProjectSchema>
 
 export const ListProjectsSchema = z.object({
   page: z.number().default(1),

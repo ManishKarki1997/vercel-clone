@@ -19,7 +19,7 @@ function ProjectCard({
   return (
     <Card
       className='shadow-none hover:shadow-sm rounded cursor-pointer '
-      onClick={() => navigate(`/app/projects/${project.slug}`)}
+      onClick={() => navigate(`/app/projects/${project.id}?slug=${project.slug}`)}
     >
       <CardHeader className='flex !flex-row items-start gap-2 w-full py-5 px-6'>
         <Avatar className='rounded mt-1'>

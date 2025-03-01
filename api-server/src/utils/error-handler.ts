@@ -9,6 +9,7 @@ const errorFormatter = (error: Error, next: NextFunction) => {
   }
   if (error instanceof ForbiddenError) {
     if (error.extra) logError(error.name, error.extra);
+    next(error)
   }
   if (error instanceof UserInputError) {
     if (error.extra) logError(error.name, error.extra);

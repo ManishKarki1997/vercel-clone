@@ -4,13 +4,15 @@ import { generateSlug } from "random-word-slugs";
 import ProjectService from "../services/project.service";
 import { Config } from "../../../config/env";
 
-const runProject = async (req: Request, res: Response): Promise<any> => {
+const deployProject = async (req: Request, res: Response): Promise<any> => {
+
+  const userId = req.user?.sub
 
   try {
     const slug = generateSlug()
     const finalSlug = req.body?.slug ? req.body.slug : slug
 
-    await ProjectService.runProject({ ...req.body, projectId: finalSlug })
+    await ProjectService.deployProject({ ...req.body, projectId: finalSlug, userId })
 
     return res.status(200).json({
       status: "Queued",
@@ -101,7 +103,7 @@ const projectDetail = async (req: Request, res: Response): Promise<any> => {
 }
 
 const ProjectController = {
-  runProject,
+  deployProject,
   createProject,
   updateProject,
   listProjects,

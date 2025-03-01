@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import React from "react";
 import { projectDetailAction } from "../actions/project.action";
-import { useParams } from "react-router";
+import { useParams, useSearchParams } from "react-router";
 import { AxiosError } from "axios";
 import { Project } from "../types/project.types";
 
@@ -22,7 +22,9 @@ type ProjectDetailContextType = {
 export const ProjectDetailProvider = ({ children }: { children: React.ReactNode }) => {
 
 
-  const { slug } = useParams()
+  const [searchParams] = useSearchParams()
+  // const { id } = useParams()
+  const slug = searchParams.get("slug")
 
   const {
     data: project,
