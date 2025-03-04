@@ -62,7 +62,7 @@ export const PatchProjectSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters long").max(256, "Name must be less than 256 characters").optional(),
   gitUrl: z.string().url("Git repo url must be present").optional(),
   description: z.string().max(1000, "Description must be less than 1000 characters").optional(),
-  slug: z.string().optional()
+  slug: z.string()
 })
 export type PatchProject = z.infer<typeof PatchProjectSchema>
 

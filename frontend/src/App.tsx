@@ -19,6 +19,8 @@ import { AuthProvider } from "./providers/auth-provider";
 import { useAuth } from "./hooks/use-auth";
 import ProjectsList from "./features/projects/pages/projects-list";
 import ProjectDetail from "./features/projects/pages/project-detail";
+import { useSocket } from "./hooks/use-socket";
+import { SocketProvider } from "./providers/socket-provider";
 
 
 
@@ -28,8 +30,10 @@ const AppContent = () => {
 
   const navigate = useNavigate();
   const isLoginErrorToastShown = React.useRef(false)
+  const { user } = useAuth()
 
   const { error } = useAuth()
+  const { socket } = useSocket()
 
 
   React.useEffect(() => {
@@ -46,6 +50,13 @@ const AppContent = () => {
       navigate("/login")
     }
   }, [error, navigate])
+
+  React.useEffect(() => {
+    if (!user) return
+    if (!socket) return
+
+    socket.connect()
+  }, [user, socket])
 
   return (
     <Routes>
@@ -82,16 +93,19 @@ function App() {
 
   return (
     <>
-      <BrowserRouter>
+      <SocketProvider>
 
-        <QueryClientProvider client={queryClient}>
-          <Toaster position="top-center" />
-          <AuthProvider>
-            <AppContent />
-          </AuthProvider>
-        </QueryClientProvider>
-      </BrowserRouter>
+        <BrowserRouter>
 
+          <QueryClientProvider client={queryClient}>
+            <Toaster position="top-center" />
+            <AuthProvider>
+              <AppContent />
+            </AuthProvider>
+          </QueryClientProvider>
+        </BrowserRouter>
+
+      </SocketProvider>
     </>
   )
 }

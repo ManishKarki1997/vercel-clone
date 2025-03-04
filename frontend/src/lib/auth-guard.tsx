@@ -15,7 +15,7 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
   if (showAppSkeleton) {
     return <AppDashboardSkeleton />
   }
-  console.log("guard ", { showAppSkeleton, canAccessAppDashboard })
+  // console.log("guard ", { showAppSkeleton, canAccessAppDashboard })
 
   if (!showAppSkeleton && !canAccessAppDashboard) {
     return <Navigate to="/login" />

@@ -10,6 +10,8 @@ import { and, desc, eq, or } from "drizzle-orm"
 import { slugify } from "../../../utils/slugify"
 import { ForbiddenError, UserInputError } from "../../../utils/error"
 
+
+
 const updateProjectDeployment = async (payload: PatchDeployment) => {
   await
     database
@@ -55,101 +57,106 @@ const deployProject = async (payload: DeployProject) => {
     throw new ForbiddenError("Project is not active. Please activate the project first")
   }
 
-  const existingDeployment = await
-    database
-      .select({})
-      .from(deployments)
-      .where(
-        and(
-          eq(deployments.projectId, project.id),
-          or(eq(deployments.status, "Running"), eq(deployments.status, "Started"))
+
+  if (!Config.isDebugMode) {
+
+    const existingDeployment = await
+      database
+        .select({})
+        .from(deployments)
+        .where(
+          and(
+            eq(deployments.projectId, project.id),
+            or(eq(deployments.status, "Running"), eq(deployments.status, "Started"))
+          )
         )
-      )
 
-  if (existingDeployment.length > 0) {
-    throw new ForbiddenError("Please cancel the previous deployment before redeploying")
+    if (existingDeployment.length > 0) {
+      throw new ForbiddenError("Please cancel the previous deployment before redeploying")
+    }
+
+
+    const [deployment] = await
+      database
+        .insert(deployments)
+        .values({
+          projectId: project.id,
+          status: "Running",
+          userId: payload.userId
+        }).returning()
+
+    const runProjectPayload = {
+      gitRepoUrl: project.gitUrl,
+      projectId: project.slug
+    }
+
+
+
+    // const command = new RunTaskCommand({
+    //   cluster: Config.AWS_CLUSTER_ARN,
+    //   taskDefinition: Config.AWS_TASK_ARN,
+    //   launchType: "FARGATE",
+    //   count: 1,
+    //   networkConfiguration: {
+    //     awsvpcConfiguration: {
+    //       subnets: Config.AWS_TASK_SUBNETS,
+    //       securityGroups: [Config.AWS_TASK_SECURITY_GROUP],
+    //       assignPublicIp: "ENABLED",
+    //     }
+    //   },
+    //   overrides: {
+    //     containerOverrides: [
+    //       {
+    //         name: "builder-image",
+    //         environment: [
+    //           {
+    //             name: "AWS_REGION",
+    //             value: Config.AWS_REGION
+    //           },
+    //           {
+    //             name: "AWS_ACCESS_KEY",
+    //             value: Config.AWS_ACCESS_KEY
+    //           },
+    //           {
+    //             name: "AWS_SECRET_ACCESS_KEY",
+    //             value: Config.AWS_SECRET_ACCESS_KEY
+    //           },
+    //           {
+    //             name: "AWS_S3_BUCKET",
+    //             value: Config.AWS_S3_BUCKET
+    //           },
+    //           {
+    //             name: "GIT_REPOSITORY_URL",
+    //             value: runProjectPayload.gitRepoUrl
+    //           },
+    //           {
+    //             name: "PROJECT_ID",
+    //             value: runProjectPayload.projectId
+    //           },
+    //         ]
+    //       }
+    //     ]
+    //   }
+    // })
+
+    // await ecsClient.send(command)
+
+    const deploymentUrl = getDeploymentUrl(runProjectPayload.projectId)
+
+    await updateProjectDeployment({
+      id: deployment.id,
+      status: "Running",
+      userId: payload.userId,
+      deploymentUrl,
+      completedAt: new Date()
+    })
+
+    await patchProject({
+      slug: payload.slug,
+      userId: payload.userId,
+      deploymentUrl
+    })
   }
-
-
-  const [deployment] = await
-    database
-      .insert(deployments)
-      .values({
-        projectId: project.id,
-        status: "Running",
-        userId: payload.userId
-      }).returning()
-
-  const runProjectPayload = {
-    gitRepoUrl: project.gitUrl,
-    projectId: project.slug
-  }
-
-
-  // const command = new RunTaskCommand({
-  //   cluster: Config.AWS_CLUSTER_ARN,
-  //   taskDefinition: Config.AWS_TASK_ARN,
-  //   launchType: "FARGATE",
-  //   count: 1,
-  //   networkConfiguration: {
-  //     awsvpcConfiguration: {
-  //       subnets: Config.AWS_TASK_SUBNETS,
-  //       securityGroups: [Config.AWS_TASK_SECURITY_GROUP],
-  //       assignPublicIp: "ENABLED",
-  //     }
-  //   },
-  //   overrides: {
-  //     containerOverrides: [
-  //       {
-  //         name: "builder-image",
-  //         environment: [
-  //           {
-  //             name: "AWS_REGION",
-  //             value: Config.AWS_REGION
-  //           },
-  //           {
-  //             name: "AWS_ACCESS_KEY",
-  //             value: Config.AWS_ACCESS_KEY
-  //           },
-  //           {
-  //             name: "AWS_SECRET_ACCESS_KEY",
-  //             value: Config.AWS_SECRET_ACCESS_KEY
-  //           },
-  //           {
-  //             name: "AWS_S3_BUCKET",
-  //             value: Config.AWS_S3_BUCKET
-  //           },
-  //           {
-  //             name: "GIT_REPOSITORY_URL",
-  //             value: runProjectPayload.gitRepoUrl
-  //           },
-  //           {
-  //             name: "PROJECT_ID",
-  //             value: runProjectPayload.projectId
-  //           },
-  //         ]
-  //       }
-  //     ]
-  //   }
-  // })
-
-  // await ecsClient.send(command)
-
-  const deploymentUrl = getDeploymentUrl(runProjectPayload.projectId)
-
-  await updateProjectDeployment({
-    id: deployment.id,
-    status: "Running",
-    userId: payload.userId,
-    deploymentUrl,
-    completedAt: new Date()
-  })
-
-  await patchProject({
-    slug: payload.slug,
-    userId: payload.userId,
-    deploymentUrl
-  })
 
 }
 

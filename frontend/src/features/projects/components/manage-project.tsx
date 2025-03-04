@@ -72,9 +72,8 @@ function ManageProject({
     },
   })
 
-  console.log("form errors", form.formState.errors)
   function onSubmit(values: z.infer<typeof relevantFormSchema>) {
-    mutation.mutate(values)
+    mutation.mutate(JSON.parse(JSON.stringify(values)))
   }
 
 

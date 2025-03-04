@@ -8,6 +8,9 @@ import { Config } from "./config/env";
 import Router from "./route";
 import { errorHandler } from "./utils/error-handler";
 import type { SupabaseJWTUser } from "./types/supabase.type";
+import { initSubscribeToLogs } from "./db/redis";
+// import { initializeSocket } from "./db/socket_express";
+import { initializeSocket } from "./db/socket";
 
 dotenv.config();
 
@@ -31,6 +34,11 @@ app.get("/", (req: Request, res: Response) => {
 app.use("/api/v1", Router)
 
 app.use(errorHandler)
+
+initSubscribeToLogs()
+
+// initializeSocket(app)
+initializeSocket()
 
 app.listen(port, () => {
   console.log(`[server]: API Server is running on port ${port}`);

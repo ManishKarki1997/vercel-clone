@@ -12,6 +12,7 @@ import { Deployment } from '../../types/project.types'
 import { DataTablePagination } from '@/components/shared/data-table-pagination'
 import { getCoreRowModel, getPaginationRowModel, useReactTable } from '@tanstack/react-table'
 import { usePagination } from '@/hooks/use-pagination'
+import DeploymentLogs from '../deployments/deployment-logs'
 
 const deployments: Deployment[] = [
   {
@@ -36,11 +37,19 @@ const deployments: Deployment[] = [
 
 function ProjectDeployments() {
 
+  const [isDeploymentLogModalActive, setIsDeploymentLogModalActive] = React.useState(true)
+  const [selectedDeployment, setSelectedDeployment] = React.useState(null)
+
   const { project } = useProjectDetail()
 
   const queryClient = useQueryClient()
   const { DeploymentListColumns } = useDeploymentListColumns()
   const { onPaginationChange, pagination } = usePagination();
+
+  const onCloseDeploymentLogsModal = () => {
+    setIsDeploymentLogModalActive(false)
+    setSelectedDeployment(null)
+  }
 
   const onColumnAction = React.useCallback((action: DeploymentListColumnActionType, deployment: Deployment, extra: any) => {
     if (action === "CopyDeploymentId") {
@@ -118,6 +127,14 @@ function ProjectDeployments() {
         <DataTablePagination table={table} />
       </div>
 
+      {
+        isDeploymentLogModalActive &&
+        <DeploymentLogs
+          isOpen={isDeploymentLogModalActive}
+          onClose={onCloseDeploymentLogsModal}
+          deployment={selectedDeployment}
+        />
+      }
     </div>
   )
 }
