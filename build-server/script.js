@@ -34,6 +34,10 @@ const PROJECT_ID = Config.PROJECT_ID;
 //   }, 1000)
 // }
 
+async function waitFor(ms = 100) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 async function init() {
   const outputPath = path.join(__dirname, "repo");
 
@@ -67,14 +71,21 @@ async function init() {
     const distFolderPath = path.join(__dirname, "repo", "dist");
     const distFolderContents = fs.readdirSync(distFolderPath, { recursive: true });
 
+
+    publishLog({
+      deploymentId: PROJECT_ID,      
+      log: "Preparing to upload built folder",
+      type:"info"
+    })
+
     for (const file of distFolderContents) {
+      await waitFor(1000)
       const filePath = path.join(distFolderPath, file)
 
       if (fs.lstatSync(filePath).isDirectory()) continue;
 
 
-
-      console.log('uploading', file);
+      
       publishLog({
         deploymentId: PROJECT_ID,      
         log: `Uploading ${file}`,
@@ -101,11 +112,14 @@ async function init() {
 
     }
 
+
     publishLog({
       deploymentId: PROJECT_ID,      
-      log: "Exiting process",
+      log: "Deployed Successfully.",
       type:"info"
     })
+
+    await waitFor(2000)
     process.exit(0)
   });
 

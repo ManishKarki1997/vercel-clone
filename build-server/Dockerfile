@@ -10,10 +10,10 @@ RUN apt install git -y
 
 WORKDIR /home/app
 
-COPY main.sh main.sh
 COPY redis.js redis.js
 COPY config.js config.js
 COPY script.js script.js
+COPY main.sh main.sh
 COPY package.json .
 # intentionally not including package-lock because of this bug https://github.com/npm/cli/issues/4828
 
@@ -22,4 +22,4 @@ RUN npm install
 RUN chmod +x main.sh
 RUN chmod +x script.js
 
-ENTRYPOINT [ "/home/app/main.sh" ]
+#ENTRYPOINT [ "/home/app/main.sh" ]

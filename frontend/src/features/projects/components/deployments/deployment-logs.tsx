@@ -5,6 +5,7 @@ import { Deployment, DeploymentLog } from '../../types/deployment.types';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import EmptyState from '@/features/app/components/empty-state';
 import { NotebookIcon } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 type Props = {
   onClose: () => void
@@ -71,7 +72,7 @@ function DeploymentLogs({
               deploymentLogs.map((log, idx) => (
                 <div key={idx} className='flex items-start gap-4'>
                   <p className='text-base text-muted-foreground font-mono'>{new Date(log.date).toLocaleString()}</p>
-                  <p className=' text-base text-foreground font-medium'>{log.log}</p>
+                  <p className={cn(' text-base text-foreground font-medium', { 'text-red-500': log.type === "error", 'text-green-500': log.type === "success" })}>{log.log}</p>
                 </div>
               ))
             }

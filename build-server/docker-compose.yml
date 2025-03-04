@@ -1,0 +1,32 @@
+version: '3.8'  # Version of Docker Compose
+
+services:
+  # Node.js app service
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile 
+    container_name: my-app
+    volumes:
+      - .:/home/app
+    depends_on:
+      - redis  # Ensure Redis is up before the app starts
+    #command: /home/app/main.sh 
+    command: [ "bash", "-c", "/home/app/main.sh" ]
+    env_file:
+      - .env
+    networks:
+      - redis-network
+
+  # Redis service
+  redis:
+    image: redis:latest
+    container_name: redis
+    ports:
+      - "6379:6379"  # Redis default port
+    networks:
+      - redis-network
+
+networks:
+  redis-network:
+    driver: bridge

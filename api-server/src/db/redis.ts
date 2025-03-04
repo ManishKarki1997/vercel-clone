@@ -2,12 +2,14 @@ import Redis from 'ioredis'
 import { Config } from '../config/env'
 import { sendDeploymentEvent } from './socket'
 
-const subscriber = new Redis({
-  port: Config.REDIS_PORT,
-  host: Config.REDIS_HOST,
-  username: Config.REDIS_USERNAME,
-  password: Config.REDIS_PASSWORD,
-})
+// const subscriber = new Redis({
+//   port: Config.REDIS_PORT,
+//   host: Config.REDIS_HOST,
+//   username: Config.REDIS_USERNAME,
+//   password: Config.REDIS_PASSWORD,
+// })
+
+const subscriber = new Redis(Config.REDIS_SERVICE_URI)
 
 export const initSubscribeToLogs = () => {
   subscriber.psubscribe(`logs*`)
