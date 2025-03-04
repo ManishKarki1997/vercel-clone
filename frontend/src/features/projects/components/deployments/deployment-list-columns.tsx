@@ -1,11 +1,11 @@
-
+import moment from 'moment'
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { ColumnDef } from "@tanstack/react-table"
-import { CopyIcon, MoreHorizontal, RotateCcwIcon } from "lucide-react"
-import { Deployment } from "../../types/project.types"
+import { CopyIcon, MoreHorizontal, NotebookIcon, RotateCcwIcon } from "lucide-react"
+import { Deployment } from '../../types/deployment.types'
 
-export type DeploymentListColumnActionType = 'CopyDeploymentId' | 'Redeploy'
+export type DeploymentListColumnActionType = 'CopyDeploymentId' | 'ViewLogs' | 'Redeploy'
 
 type DeploymentListColumnsProps = {
   onAction: (action: DeploymentListColumnActionType, row: Deployment, extra?: any) => void;
@@ -27,7 +27,20 @@ export const useDeploymentListColumns = () => {
       {
         accessorKey: "completedAt",
         header: "Completed At",
-        cell: ({ row }) => <span>{!row.original.completedAt ? "-" : new Date(row.original.completedAt).toLocaleString()}</span>,
+        cell: ({ row }) => <p>
+          <span className='text-primary'>
+            {
+              !row.original.completedAt || !row.original.createdAt ? "" :
+                <>
+                  {!row.original.completedAt ? "" : moment(row.original.completedAt).diff(moment(row.original.createdAt), "minutes")}m
+                  {(!row.original.completedAt || !row.original.createdAt) ? "" : moment(row.original.completedAt).diff(moment(row.original.createdAt), "seconds")}
+                  s
+                </>
+            }
+          </span>
+          <br />
+          <span>{(!row.original.completedAt) ? "-" : new Date(row.original.completedAt).toLocaleString()}</span>
+        </p>,
       },
       {
         accessorKey: "status",
@@ -36,6 +49,11 @@ export const useDeploymentListColumns = () => {
       {
         accessorKey: "deploymentUrl",
         header: "Deployment Url",
+        cell: ({ row }) => (
+          <div>
+            <a className="font-medium hover:text-primary" href={row.original.deploymentUrl} target="_blank">{row.original.deploymentUrl}</a>
+          </div>
+        )
       },
       {
         id: "actions",
@@ -58,13 +76,22 @@ export const useDeploymentListColumns = () => {
                   <CopyIcon />
                   Copy Deployment Url
                 </DropdownMenuItem>
-                <DropdownMenuSeparator />
+
+                <DropdownMenuItem
+                  onClick={() => onAction("ViewLogs", deployment)}
+                // onClick={() => navigator.clipboard.writeText(deployment.id)}
+                >
+                  <NotebookIcon />
+                  View Logs
+                </DropdownMenuItem>
+
+                {/* <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onClick={() => onAction("Redeploy", deployment)}
                 >
                   <RotateCcwIcon />
                   Redeploy
-                </DropdownMenuItem>
+                </DropdownMenuItem> */}
               </DropdownMenuContent>
             </DropdownMenu>
           )

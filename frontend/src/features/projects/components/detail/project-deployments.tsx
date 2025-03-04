@@ -1,50 +1,45 @@
 import { Button } from '@/components/ui/button'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { PlayIcon } from 'lucide-react'
 import React from 'react'
-import { deployProjectAction } from '../../actions/project.action'
+import { deployProjectAction, listProjectDeploymentsAction } from '../../actions/project.action'
 import { useProjectDetail } from '../../providers/project-detail-provider'
 import { toast } from 'sonner'
 import { AxiosError } from 'axios'
 import { DataTable } from '@/components/shared/data-table'
 import { DeploymentListColumnActionType, DeploymentListColumns, useDeploymentListColumns } from '../deployments/deployment-list-columns'
-import { Deployment } from '../../types/project.types'
 import { DataTablePagination } from '@/components/shared/data-table-pagination'
 import { getCoreRowModel, getPaginationRowModel, useReactTable } from '@tanstack/react-table'
 import { usePagination } from '@/hooks/use-pagination'
 import DeploymentLogs from '../deployments/deployment-logs'
+import { Deployment } from '../../types/deployment.types'
 
-const deployments: Deployment[] = [
-  {
-    id: "728ed52f",
-    status: "Started",
-    deploymentUrl: "m@example.com",
-    createdAt: new Date().toString(),
-    completedAt: new Date().toString(),
-    projectId: "ecommerce-template",
-    userId: "user-2"
-  },
-  {
-    id: "489e1d42",
-    status: "Running",
-    deploymentUrl: "example@gmail.com",
-    createdAt: new Date().toString(),
-    completedAt: new Date().toString(),
-    projectId: "starter-template",
-    userId: "user-1"
-  },
-]
 
 function ProjectDeployments() {
 
-  const [isDeploymentLogModalActive, setIsDeploymentLogModalActive] = React.useState(true)
-  const [selectedDeployment, setSelectedDeployment] = React.useState(null)
+  const [isDeploymentLogModalActive, setIsDeploymentLogModalActive] = React.useState(false)
+  const [selectedDeployment, setSelectedDeployment] = React.useState<Deployment | null>(null)
 
   const { project } = useProjectDetail()
 
   const queryClient = useQueryClient()
   const { DeploymentListColumns } = useDeploymentListColumns()
   const { onPaginationChange, pagination } = usePagination();
+
+  const {
+    data: deploymentsListData
+  } = useQuery({
+    queryKey: ['deployment', { slug: project?.slug, page: pagination.pageIndex + 1, limit: pagination.pageSize }],
+    queryFn: () => listProjectDeploymentsAction({
+      projectId: !project ? '' : project.id,
+      page: pagination.pageIndex + 1,
+      limit: pagination.pageSize
+    }),
+    enabled: !!project
+  })
+
+  const deployments: Deployment[] = deploymentsListData?.deployments || []
+
 
   const onCloseDeploymentLogsModal = () => {
     setIsDeploymentLogModalActive(false)
@@ -57,7 +52,9 @@ function ProjectDeployments() {
       toast.success("Deployment url copied to clipboard")
     } else if (action === "Redeploy") {
       // TODO make api call to redeploy this deployment
-    } else {
+    } else if (action === "ViewLogs") {
+      setIsDeploymentLogModalActive(true)
+      setSelectedDeployment(deployment)
       // do nothing
     }
   }, [])
@@ -68,13 +65,12 @@ function ProjectDeployments() {
       onAction: onColumnAction
     }),
     manualPagination: true,
-    // pageCount: apiPagination?.totalPages || 1,
-    // rowCount: apiPagination?.totalEntities || 1,
+    pageCount: deploymentsListData?.totalPages || 1,
+    rowCount: deploymentsListData?.totalEntities || 1,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     onPaginationChange,
     // autoResetPageIndex: false, //turn off auto reset of pageIndex
-
     state: {
       pagination,
     }
@@ -83,16 +79,17 @@ function ProjectDeployments() {
   const mutation = useMutation({
     mutationFn: deployProjectAction,
     onSuccess: () => {
-      toast.success("Queued for deployment successfully")
+      toast.success("Queued for deployment successfully", { id: "deploy-project" })
       queryClient.invalidateQueries({ queryKey: ['deployment', { slug: project?.slug }] })
     },
     onError: (err: AxiosError) => {
-      toast.error(err?.response?.data?.error || "Something went wrong while deploying project")
+      toast.error(err?.response?.data?.error || "Something went wrong while deploying project", { id: "deploy-project" })
     },
   })
 
   const deployProject = () => {
     if (!project) return
+    toast.loading("Deploying project", { id: "deploy-project" })
 
     mutation.mutate({ slug: project.slug })
   }
@@ -128,7 +125,9 @@ function ProjectDeployments() {
       </div>
 
       {
-        isDeploymentLogModalActive &&
+        isDeploymentLogModalActive
+        && selectedDeployment
+        &&
         <DeploymentLogs
           isOpen={isDeploymentLogModalActive}
           onClose={onCloseDeploymentLogsModal}

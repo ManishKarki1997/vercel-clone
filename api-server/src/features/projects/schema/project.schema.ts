@@ -24,12 +24,21 @@ export type DeployProject = z.infer<typeof DeployProjectSchema>
 
 
 export const ListProjectsSchema = z.object({
-  userId: z.string().nullable(),
+  userId: z.string(),
   page: z.number().default(1),
   limit: z.number().default(1)
 })
 
 export type ListProjects = z.infer<typeof ListProjectsSchema>
+
+export const ListProjectDeploymentsSchema = z.object({
+  projectId: z.string(),
+  userId: z.string(),
+  page: z.number().default(1),
+  limit: z.number().default(1)
+})
+
+export type ListProjectDeployments = z.infer<typeof ListProjectDeploymentsSchema>
 
 
 

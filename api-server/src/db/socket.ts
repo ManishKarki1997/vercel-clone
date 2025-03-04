@@ -18,10 +18,14 @@ const handleSocketEvents = () => {
     console.log("New socket connection ", socket.id)
 
     socket.on("subscribe", (deploymentId: string) => {
-      // console.log({ deploymentId })
+      // console.log(`Subscribed to ${deploymentId}`)
       socket.join(deploymentId)
       socket.emit("message", `Subscribed to deployment ${deploymentId}`)
-      // console.log("Subscribed to deployment ", deploymentId)
+    })
+
+    socket.on("unsubscribe", (deploymentId: string) => {
+      // console.log(`Unsubscribed from ${deploymentId}`)
+      socket.leave(deploymentId)
     })
   })
 }

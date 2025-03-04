@@ -1,8 +1,9 @@
+import { Pagination } from "@/config/pagination";
 import React from "react";
 
 export function usePagination() {
   const [pagination, setPagination] = React.useState({
-    pageSize: 10,
+    pageSize: Pagination.LIMIT,
     pageIndex: 0,
   });
   const { pageSize, pageIndex } = pagination;

@@ -3,6 +3,7 @@ import { generateSlug } from "random-word-slugs";
 
 import ProjectService from "../services/project.service";
 import { Config } from "../../../config/env";
+import type { ListProjectDeployments } from "../schema/project.schema";
 
 const deployProject = async (req: Request, res: Response): Promise<any> => {
 
@@ -70,11 +71,43 @@ const listProjects = async (req: Request, res: Response): Promise<any> => {
 
   try {
 
-    const projects = await ProjectService.listProjects({ ...req.query, userId })
+    const payload: ListProjectDeployments = {
+      limit: req.query.limit ? Number(req.query.limit) : 10,
+      page: req.query.page ? Number(req.query.page) : 1,
+      projectId: req.query.projectId as string,
+      userId: userId as string
+    }
+
+    const projects = await ProjectService.listProjects(payload)
 
     return res.status(200).json({
       message: "Projects listed successfully",
       data: projects
+    })
+  } catch (error) {
+    return res.status(500).json({
+      status: "Error",
+      error: error?.message || "Something went wrong"
+    })
+  }
+}
+
+const listProjectDeployments = async (req: Request, res: Response): Promise<any> => {
+  const userId = req.user?.sub!
+
+  try {
+    const payload: ListProjectDeployments = {
+      limit: req.query.limit ? Number(req.query.limit) : 10,
+      page: req.query.page ? Number(req.query.page) : 1,
+      projectId: req.query.projectId as string,
+      userId: userId as string
+    }
+
+    const deployments = await ProjectService.listProjectDeployments(payload)
+
+    return res.status(200).json({
+      message: "Projectdeployments listed successfully",
+      data: deployments
     })
   } catch (error) {
     return res.status(500).json({
@@ -107,7 +140,8 @@ const ProjectController = {
   createProject,
   updateProject,
   listProjects,
-  projectDetail
+  projectDetail,
+  listProjectDeployments
 }
 
 export default ProjectController

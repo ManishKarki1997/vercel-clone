@@ -3,7 +3,7 @@ import dotenv from 'dotenv'
 dotenv.config();
 
 export const Config = {
-  isDebugMode: true,
+  isDebugMode: false,
   PORT: process.env.PORT || 3000,
   SOCKET_SERVER_PORT: process.env.SOCKET_SERVER_PORT ? Number(process.env.SOCKET_SERVER_PORT) : 3002,
   NODE_ENV: process.env.NODE_ENV,

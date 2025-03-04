@@ -1,13 +1,15 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useSocket } from '@/hooks/use-socket';
 import React from 'react'
-import { DeploymentLog } from '../../types/deployment.types';
+import { Deployment, DeploymentLog } from '../../types/deployment.types';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import EmptyState from '@/features/app/components/empty-state';
+import { NotebookIcon } from 'lucide-react';
 
 type Props = {
   onClose: () => void
   isOpen: boolean;
-  deployment?: any;
+  deployment: Deployment;
 }
 
 function DeploymentLogs({
@@ -20,7 +22,7 @@ function DeploymentLogs({
   const [deploymentLogs, setDeploymentLogs] = React.useState<DeploymentLog[]>([])
 
   React.useEffect(() => {
-    // if(!deployment) return;
+    if (!deployment) return;
 
     if (!socket) return;
 
@@ -30,10 +32,14 @@ function DeploymentLogs({
       console.log("Received log ", logObj)
     })
 
-    socket.emit("subscribe", "logs:p1")
+
+    // socket.emit("subscribe", `logs:${deployment.id}`)
+    socket.emit("subscribe", `logs:${deployment.projectId}`)
 
     return () => {
       socket.off("log")
+      // socket.emit("unsubscribe", `logs:${deployment.id}`)
+      socket.emit("unsubscribe", `logs:${deployment.projectId}`)
     }
 
   }, [deployment, socket])
@@ -45,10 +51,22 @@ function DeploymentLogs({
           <DialogTitle>View Deployment Logs</DialogTitle>
         </DialogHeader>
 
-        <ScrollArea className='pt-4 h-[700px] '>
+        <ScrollArea className=' h-[700px] '>
 
           <div className="space-y-2">
-            {/* Lorem ipsum dolor sit amet consectetur adipisicing elit. Fugiat, officiis. Rem, sapiente unde. Repudiandae sapiente rem reprehenderit tempora et suscipit. */}
+
+
+            {
+              !deploymentLogs.length &&
+              <EmptyState className='text-center flex flex-col items-center shadow-sm border border-gray-200 dark:border-gray-700 rounded-lg'>
+                <NotebookIcon />
+                <EmptyState.Header>
+                  No Logs Available
+                </EmptyState.Header>
+
+              </EmptyState>
+            }
+
             {
               deploymentLogs.map((log, idx) => (
                 <div key={idx} className='flex items-start gap-4'>

@@ -13,7 +13,7 @@ function ProjectDetail() {
       <AppContainer className=''>
         <ProjectDetailHeader />
 
-        <Tabs defaultValue="details" className=" mt-12">
+        <Tabs defaultValue="deployments" className=" mt-12">
           <TabsList className='h-10'>
             <TabsTrigger value="details" className='px-8 py-2 gap-2'>
               <InfoIcon size={18} />

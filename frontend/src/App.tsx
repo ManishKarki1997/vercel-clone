@@ -21,6 +21,7 @@ import ProjectsList from "./features/projects/pages/projects-list";
 import ProjectDetail from "./features/projects/pages/project-detail";
 import { useSocket } from "./hooks/use-socket";
 import { SocketProvider } from "./providers/socket-provider";
+import { TooltipProvider } from "./components/ui/tooltip";
 
 
 
@@ -94,17 +95,17 @@ function App() {
   return (
     <>
       <SocketProvider>
+        <TooltipProvider>
+          <BrowserRouter>
 
-        <BrowserRouter>
-
-          <QueryClientProvider client={queryClient}>
-            <Toaster position="top-center" />
-            <AuthProvider>
-              <AppContent />
-            </AuthProvider>
-          </QueryClientProvider>
-        </BrowserRouter>
-
+            <QueryClientProvider client={queryClient}>
+              <Toaster position="top-center" />
+              <AuthProvider>
+                <AppContent />
+              </AuthProvider>
+            </QueryClientProvider>
+          </BrowserRouter>
+        </TooltipProvider>
       </SocketProvider>
     </>
   )

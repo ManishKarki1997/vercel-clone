@@ -1,5 +1,5 @@
 const Redis = require("ioredis");
-const { Config } = require("./config/config");
+const { Config } = require("./config");
 
 const publisher = new Redis({
   port: Config.REDIS_PORT,

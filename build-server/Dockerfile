@@ -11,6 +11,8 @@ RUN apt install git -y
 WORKDIR /home/app
 
 COPY main.sh main.sh
+COPY redis.js redis.js
+COPY config.js config.js
 COPY script.js script.js
 COPY package.json .
 # intentionally not including package-lock because of this bug https://github.com/npm/cli/issues/4828

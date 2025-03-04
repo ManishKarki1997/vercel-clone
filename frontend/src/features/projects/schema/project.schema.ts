@@ -32,3 +32,11 @@ export const ProjectDetailSchema = z.object({
 })
 
 export type ProjectDetail = z.infer<typeof ProjectDetailSchema>
+
+export const ListProjectDeploymentsSchema = z.object({
+  projectId: z.string(),
+  page: z.number().default(1),
+  limit: z.number().default(1)
+})
+
+export type ListProjectDeployments = z.infer<typeof ListProjectDeploymentsSchema>

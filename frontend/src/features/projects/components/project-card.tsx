@@ -22,13 +22,13 @@ function ProjectCard({
       onClick={() => navigate(`/app/projects/${project.id}?slug=${project.slug}`)}
     >
       <CardHeader className='flex !flex-row items-start gap-2 w-full py-5 px-6'>
-        <Avatar className='rounded mt-1'>
+        <Avatar className='rounded'>
           <AvatarImage src={`https://api.dicebear.com/9.x/bottts-neutral/svg?seed=${project.id}`} />
           <AvatarFallback>{project.name.slice(0, 2)}</AvatarFallback>
         </Avatar>
-        <div className='flex-1'>
-          <div className="flex items-center gap-2">
-            <CardTitle>{project.name}</CardTitle>
+        <div className='flex-1 '>
+          <div className="flex items-center gap-2 -mt-3">
+            <CardTitle className='leading-6'>{project.name}</CardTitle>
             <Badge className={cn(project.status === "Active" ? 'bg-green-500' : "bg-red-500")}>{project.status}</Badge>
 
           </div>

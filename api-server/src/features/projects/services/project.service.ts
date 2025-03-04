@@ -2,11 +2,11 @@ import { RunTaskCommand } from "@aws-sdk/client-ecs"
 import { Config } from "../../../config/env"
 import type { RunProjectPayload } from "../types/project.type"
 import { ecsClient } from "../../../utils/aws"
-import type { AddProject, DeployProject, EditProject, ListProjects, PatchDeployment, PatchProject, ProjectDetail } from "../schema/project.schema"
+import type { AddProject, DeployProject, EditProject, ListProjectDeployments, ListProjects, PatchDeployment, PatchProject, ProjectDetail } from "../schema/project.schema"
 import { database } from "../../../db/drizzle"
 import { deployments, profiles, projects } from "../../../db/schema"
 import { getDeploymentUrl, getRange } from "../../../utils/utils"
-import { and, desc, eq, or } from "drizzle-orm"
+import { and, count, desc, eq, or } from "drizzle-orm"
 import { slugify } from "../../../utils/slugify"
 import { ForbiddenError, UserInputError } from "../../../utils/error"
 
@@ -71,9 +71,9 @@ const deployProject = async (payload: DeployProject) => {
           )
         )
 
-    if (existingDeployment.length > 0) {
-      throw new ForbiddenError("Please cancel the previous deployment before redeploying")
-    }
+    // if (existingDeployment.length > 0) {
+    //   throw new ForbiddenError("Please cancel the previous deployment before redeploying")
+    // }
 
 
     const [deployment] = await
@@ -92,54 +92,54 @@ const deployProject = async (payload: DeployProject) => {
 
 
 
-    // const command = new RunTaskCommand({
-    //   cluster: Config.AWS_CLUSTER_ARN,
-    //   taskDefinition: Config.AWS_TASK_ARN,
-    //   launchType: "FARGATE",
-    //   count: 1,
-    //   networkConfiguration: {
-    //     awsvpcConfiguration: {
-    //       subnets: Config.AWS_TASK_SUBNETS,
-    //       securityGroups: [Config.AWS_TASK_SECURITY_GROUP],
-    //       assignPublicIp: "ENABLED",
-    //     }
-    //   },
-    //   overrides: {
-    //     containerOverrides: [
-    //       {
-    //         name: "builder-image",
-    //         environment: [
-    //           {
-    //             name: "AWS_REGION",
-    //             value: Config.AWS_REGION
-    //           },
-    //           {
-    //             name: "AWS_ACCESS_KEY",
-    //             value: Config.AWS_ACCESS_KEY
-    //           },
-    //           {
-    //             name: "AWS_SECRET_ACCESS_KEY",
-    //             value: Config.AWS_SECRET_ACCESS_KEY
-    //           },
-    //           {
-    //             name: "AWS_S3_BUCKET",
-    //             value: Config.AWS_S3_BUCKET
-    //           },
-    //           {
-    //             name: "GIT_REPOSITORY_URL",
-    //             value: runProjectPayload.gitRepoUrl
-    //           },
-    //           {
-    //             name: "PROJECT_ID",
-    //             value: runProjectPayload.projectId
-    //           },
-    //         ]
-    //       }
-    //     ]
-    //   }
-    // })
+    const command = new RunTaskCommand({
+      cluster: Config.AWS_CLUSTER_ARN,
+      taskDefinition: Config.AWS_TASK_ARN,
+      launchType: "FARGATE",
+      count: 1,
+      networkConfiguration: {
+        awsvpcConfiguration: {
+          subnets: Config.AWS_TASK_SUBNETS,
+          securityGroups: [Config.AWS_TASK_SECURITY_GROUP],
+          assignPublicIp: "ENABLED",
+        }
+      },
+      overrides: {
+        containerOverrides: [
+          {
+            name: "builder-image",
+            environment: [
+              {
+                name: "AWS_REGION",
+                value: Config.AWS_REGION
+              },
+              {
+                name: "AWS_ACCESS_KEY",
+                value: Config.AWS_ACCESS_KEY
+              },
+              {
+                name: "AWS_SECRET_ACCESS_KEY",
+                value: Config.AWS_SECRET_ACCESS_KEY
+              },
+              {
+                name: "AWS_S3_BUCKET",
+                value: Config.AWS_S3_BUCKET
+              },
+              {
+                name: "GIT_REPOSITORY_URL",
+                value: runProjectPayload.gitRepoUrl
+              },
+              {
+                name: "PROJECT_ID",
+                value: runProjectPayload.projectId
+              },
+            ]
+          }
+        ]
+      }
+    })
 
-    // await ecsClient.send(command)
+    await ecsClient.send(command)
 
     const deploymentUrl = getDeploymentUrl(runProjectPayload.projectId)
 
@@ -148,7 +148,6 @@ const deployProject = async (payload: DeployProject) => {
       status: "Running",
       userId: payload.userId,
       deploymentUrl,
-      completedAt: new Date()
     })
 
     await patchProject({
@@ -220,11 +219,6 @@ const updateProject = async (payload: EditProject) => {
 }
 
 const listProjects = async (payload: ListProjects) => {
-
-  await new Promise(resolve => setTimeout(() => resolve(1), 2000))
-
-
-
   const projectList = await database
     .select({
       name: projects.name,
@@ -273,12 +267,66 @@ const getProjectDetail = async (payload: ProjectDetail) => {
   return project[0]
 }
 
+
+
+const listProjectDeployments = async (payload: ListProjectDeployments) => {
+  const totalDeployments = await database
+    .select({ count: count() })
+    .from(deployments)
+    .leftJoin(profiles, eq(deployments.userId, profiles.id))
+    .where(
+      and(
+        eq(profiles.id, payload.userId!),
+        eq(deployments.projectId, payload.projectId),
+      )
+    )
+
+
+
+  const deploymentsList = await database
+    .select({
+      name: projects.name,
+      userId: profiles.id,
+      id: deployments.id,
+      projectId: deployments.projectId,
+      deploymentUrl: deployments.deploymentUrl,
+      createdAt: deployments.createdAt,
+      completedAt: deployments.completedAt,
+      status: deployments.status,
+      commitHash: deployments.commitHash,
+      commitMessage: deployments.commitMessage,
+    })
+    .from(deployments)
+    .leftJoin(projects, eq(projects.id, deployments.projectId))
+    .leftJoin(profiles, eq(deployments.userId, profiles.id))
+    .where(
+      and(
+        eq(profiles.id, payload.userId!),
+        eq(deployments.projectId, payload.projectId),
+      )
+    )
+    .limit(+payload.limit)
+    .offset(((+payload.page) - 1) * +payload.limit)
+    .orderBy(desc(deployments.createdAt))
+
+  return {
+    total: totalDeployments[0].count,
+    totalPages: Math.ceil(Number(totalDeployments[0].count) / +payload.limit),
+    deployments: deploymentsList,
+    page: +payload.page,
+    limit: +payload.limit,
+    hasNextPage: deploymentsList.length >= +payload.limit
+  }
+}
+
+
 const ProjectService = {
   deployProject,
   createProject,
   updateProject,
   listProjects,
-  projectDetail: getProjectDetail
+  projectDetail: getProjectDetail,
+  listProjectDeployments
 }
 
 export default ProjectService

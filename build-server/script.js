@@ -5,7 +5,7 @@ const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
 const dotenv = require("dotenv");
 const mime = require('mime-types')
 const Redis = require("ioredis");
-const { Config } = require('./config/config');
+const { Config } = require('./config');
 const { publishLog } = require('./redis');
 
 
@@ -22,16 +22,17 @@ const s3Client = new S3Client({
 
 const PROJECT_ID = Config.PROJECT_ID;
 
-let logId = 1;
-if (Config.isDebugMode) {
-  setInterval(() => {
-    publishLog({
-      deploymentId: PROJECT_ID,
-      log: `This is log #${logId} from the server`
-    })
-    logId++
-  }, 1000)
-}
+// let logId = 1;
+// if (Config.isDebugMode) {
+//   setInterval(() => {
+//     publishLog({
+//       deploymentId: PROJECT_ID,
+//       // deploymentId: "2bd37c0a-91b1-4787-bb47-ec1c927f4091",
+//       log: `This is log #${logId} from the server`
+//     })
+//     logId++
+//   }, 1000)
+// }
 
 async function init() {
   const outputPath = path.join(__dirname, "repo");
@@ -39,16 +40,30 @@ async function init() {
   const p = exec(`cd ${outputPath} &&  npm install --legacy-peer-deps --include=optional && npm run build`);
 
   p.stdout.on("data", log => {
+    publishLog({
+      deploymentId: PROJECT_ID,      
+      log: log.toString(),
+      type:"info"
+    })
     console.log("Building app", log);
   });
 
   p.stdout.on("error", error => {
+    publishLog({
+      deploymentId: PROJECT_ID,      
+      log: error.toString(),
+      type:"error"
+    })
     console.log("Error", error);
   });
 
   p.on("close", async () => {
     console.log("Build complete");    
-
+    publishLog({
+      deploymentId: PROJECT_ID,      
+      log: "Build Complete",
+      type:"success"
+    })
     const distFolderPath = path.join(__dirname, "repo", "dist");
     const distFolderContents = fs.readdirSync(distFolderPath, { recursive: true });
 
@@ -60,7 +75,11 @@ async function init() {
 
 
       console.log('uploading', file);
-      // publishLog(`uploading ${file}`);
+      publishLog({
+        deploymentId: PROJECT_ID,      
+        log: `Uploading ${file}`,
+        type:"info"
+      })      
 
       const command = new PutObjectCommand({
         Bucket: Config.AWS_S3_BUCKET,
@@ -70,15 +89,26 @@ async function init() {
       });
 
       await s3Client.send(command);
-      // publishLog(`uploaded ${file}`);
+      
+      publishLog({
+        deploymentId: PROJECT_ID,      
+        log: `Uploaded ${file}`,
+        type:"info"
+      })
+
       console.log('uploaded', filePath);
 
 
     }
 
-    process.exit(1)
+    publishLog({
+      deploymentId: PROJECT_ID,      
+      log: "Exiting process",
+      type:"info"
+    })
+    process.exit(0)
   });
 
 }
 
-// init();
+init();

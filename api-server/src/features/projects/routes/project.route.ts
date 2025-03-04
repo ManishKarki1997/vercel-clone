@@ -10,6 +10,7 @@ ProjectRouter.get("/", auth, ProjectController.listProjects)
 ProjectRouter.post("/", auth, ProjectController.createProject)
 ProjectRouter.put("/:id", auth, ProjectController.updateProject)
 ProjectRouter.get("/:slug", auth, ProjectController.projectDetail)
+ProjectRouter.get("/:slug/deployments", auth, ProjectController.listProjectDeployments)
 ProjectRouter.post("/:slug/deploy", auth, ProjectController.deployProject)
 
 export default ProjectRouter;
