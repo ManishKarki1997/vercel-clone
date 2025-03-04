@@ -40,7 +40,13 @@ async function waitFor(ms = 100) {
 
 async function init() {
   const outputPath = path.join(__dirname, "repo");
-
+  
+  publishLog({
+    deploymentId: PROJECT_ID,      
+    log: "Running install and build commands", 
+    type:"info"
+  })
+  
   const p = exec(`cd ${outputPath} &&  npm install --legacy-peer-deps --include=optional && npm run build`);
 
   p.stdout.on("data", log => {
@@ -79,7 +85,7 @@ async function init() {
     })
 
     for (const file of distFolderContents) {
-      await waitFor(1000)
+      await waitFor(100)
       const filePath = path.join(distFolderPath, file)
 
       if (fs.lstatSync(filePath).isDirectory()) continue;
@@ -105,10 +111,7 @@ async function init() {
         deploymentId: PROJECT_ID,      
         log: `Uploaded ${file}`,
         type:"info"
-      })
-
-      console.log('uploaded', filePath);
-
+      })   
 
     }
 
@@ -116,7 +119,7 @@ async function init() {
     publishLog({
       deploymentId: PROJECT_ID,      
       log: "Deployed Successfully.",
-      type:"info"
+      type:"success"
     })
 
     await waitFor(2000)
