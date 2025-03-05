@@ -53,3 +53,20 @@ export const deployments = pgTable("deployments", {
   commitHash: varchar("commit_hash", { length: 50 }),
   commitMessage: text("commit_message"),
 });
+
+export const projectEnvVariables = pgTable("project_env_variables", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  projectId: uuid("project_id")
+    .notNull()
+    .references(() => projects.id, { onDelete: "cascade" }),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => profiles.id, { onDelete: "cascade" }),
+  name: varchar("name", { length: 255 }).notNull(),
+  value: text("value").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => {
+  return {
+    uniqueProjectVar: t.unique().on(table.projectId, table.name),
+  };
+});

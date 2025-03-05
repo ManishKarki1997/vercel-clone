@@ -2,15 +2,69 @@ import { RunTaskCommand } from "@aws-sdk/client-ecs"
 import { Config } from "../../../config/env"
 import type { RunProjectPayload } from "../types/project.type"
 import { ecsClient } from "../../../utils/aws"
-import type { AddProject, DeployProject, EditProject, ListProjectDeployments, ListProjects, PatchDeployment, PatchProject, ProjectDetail } from "../schema/project.schema"
+import type { AddProject, DeployProject, EditProject, ListProjectDeployments, ListProjects, PatchDeployment, PatchProject, ProjectDetail, ProjectSetting } from "../schema/project.schema"
 import { database } from "../../../db/drizzle"
-import { deployments, profiles, projects } from "../../../db/schema"
+import { deployments, profiles, projectEnvVariables, projects } from "../../../db/schema"
 import { getDeploymentUrl, getRange } from "../../../utils/utils"
-import { and, count, desc, eq, or } from "drizzle-orm"
+import { and, count, desc, eq, inArray, or } from "drizzle-orm"
 import { slugify } from "../../../utils/slugify"
-import { ForbiddenError, UserInputError } from "../../../utils/error"
+import { ForbiddenError, NotFoundError, UserInputError } from "../../../utils/error"
+import { DEFAULT_PROJECT_SETTINGS } from "../constants/project-constants"
+import { buildDrizzleConflictUpdateColumns } from "../../../utils/database"
 
+const checkProjectBelongsToUser = async (payload: {
+  userId: string;
+  projectId?: string;
+  projectSlug?: string;
+}) => {
 
+  if (!payload.projectId && !payload.projectSlug) {
+    throw new Error("Project id or slug is required")
+  }
+
+  const wherClause = payload.projectId ? eq(projects.id, payload.projectId) : eq(projects.slug, payload.projectSlug)
+
+  const [project] = await
+    database
+      .select({
+        id: projects.id,
+        name: projects.name,
+        slug: projects.slug,
+        gitUrl: projects.gitUrl,
+        description: projects.description,
+        status: projects.status,
+        createdAt: projects.createdAt,
+        updatedAt: projects.updatedAt,
+        userId: projects.userId
+      })
+      .from(projects)
+      .where(
+        wherClause
+      )
+
+  if (!project) {
+    throw new UserInputError("Project does not exist")
+  }
+
+  if (project.userId !== payload.userId) {
+    throw new ForbiddenError("You do not own this project")
+  }
+
+  return project
+}
+
+const upsertDefaultProjectEnvVariables = async (payload: { projectId: string, userId: string }) => {
+  const envVariables = DEFAULT_PROJECT_SETTINGS.map(env => ({
+    ...env,
+    projectId: payload.projectId,
+    userId: payload.userId
+  }))
+
+  await database
+    .insert(projectEnvVariables)
+    .values(envVariables)
+    .onConflictDoNothing()
+}
 
 const updateProjectDeployment = async (payload: PatchDeployment) => {
   await
@@ -182,9 +236,12 @@ const createProject = async (payload: AddProject) => {
     updatedAt: new Date()
   }
 
-  const project = await database
+  const [project] = await database
     .insert(projects)
     .values(createPayload)
+    .returning()
+
+  await upsertDefaultProjectEnvVariables({ projectId: project.id, userId: payload.userId! })
 }
 
 const updateProject = async (payload: EditProject) => {
@@ -214,6 +271,9 @@ const updateProject = async (payload: EditProject) => {
     .update(projects)
     .set(updatePayload)
     .where(eq(projects.id, String(payload.id)))
+
+  await upsertDefaultProjectEnvVariables({ projectId: payload.id, userId: payload.userId! })
+
 
   return project
 }
@@ -319,6 +379,72 @@ const listProjectDeployments = async (payload: ListProjectDeployments) => {
   }
 }
 
+const updateSettings = async (payload: ProjectSetting) => {
+  const { environmentVariables } = payload
+
+  const project = await checkProjectBelongsToUser({ userId: payload.userId, projectId: payload.projectId })
+
+  if (!project) {
+    throw new NotFoundError("Project not found")
+  }
+
+  const envVariables = [...environmentVariables].map(env => ({
+    ...env,
+    projectId: payload.projectId,
+    userId: payload.userId
+  }))
+
+  // ensuring the default variables are present
+  DEFAULT_PROJECT_SETTINGS.forEach(setting => {
+    if (!envVariables.find(env => env.name === setting.name)) {
+      envVariables.push({
+        ...setting,
+        projectId: payload.projectId,
+        userId: payload.userId
+      })
+    }
+  })
+
+  const existingProjectEnvVariables = await
+    database
+      .select({ name: projectEnvVariables.name, value: projectEnvVariables.value, id: projectEnvVariables.id })
+      .from(projectEnvVariables)
+      .where(
+        and(
+          eq(projectEnvVariables.projectId, payload.projectId),
+          eq(projectEnvVariables.userId, payload.userId)
+        )
+      )
+
+  const deletedEnvVariableNames =
+    existingProjectEnvVariables
+      .map(env => env.name)
+      .filter(name => !envVariables.map(e => e.name).includes(name))
+
+
+  if (deletedEnvVariableNames.length > 0) {
+
+    await database
+      .delete(projectEnvVariables)
+      .where(
+        and(
+          eq(projectEnvVariables.projectId, payload.projectId),
+          eq(projectEnvVariables.userId, payload.userId),
+          inArray(projectEnvVariables.name, deletedEnvVariableNames),
+        )
+      )
+  }
+
+  await database
+    .insert(projectEnvVariables)
+    .values(envVariables)
+    .onConflictDoUpdate({
+      target: [projectEnvVariables.projectId, projectEnvVariables.name],
+      set: buildDrizzleConflictUpdateColumns(projectEnvVariables, ['name', 'value'])
+    })
+
+}
+
 
 const ProjectService = {
   deployProject,
@@ -326,7 +452,8 @@ const ProjectService = {
   updateProject,
   listProjects,
   projectDetail: getProjectDetail,
-  listProjectDeployments
+  listProjectDeployments,
+  updateSettings
 }
 
 export default ProjectService

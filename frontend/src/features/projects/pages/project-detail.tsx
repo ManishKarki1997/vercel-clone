@@ -6,6 +6,7 @@ import { InfoIcon, PlayIcon, SettingsIcon } from 'lucide-react'
 import ProjectBasicInfo from '../components/detail/project-basic-info'
 import { ProjectDetailProvider } from '../providers/project-detail-provider'
 import ProjectDeployments from '../components/detail/project-deployments'
+import ProjectSettings from '../components/detail/project-settings'
 
 function ProjectDetail() {
   return (
@@ -13,7 +14,7 @@ function ProjectDetail() {
       <AppContainer className=''>
         <ProjectDetailHeader />
 
-        <Tabs defaultValue="deployments" className=" mt-12">
+        <Tabs defaultValue="settings" className=" mt-12">
           <TabsList className='h-10'>
             <TabsTrigger value="details" className='px-8 py-2 gap-2'>
               <InfoIcon size={18} />
@@ -37,7 +38,9 @@ function ProjectDetail() {
             <ProjectDeployments />
           </TabsContent>
 
-          <TabsContent value="settings" className='py-4'>Project Settings</TabsContent>
+          <TabsContent value="settings" className='py-4'>
+            <ProjectSettings />
+          </TabsContent>
 
         </Tabs>
 

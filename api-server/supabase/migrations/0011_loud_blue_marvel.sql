@@ -1,0 +1,1 @@
+ALTER TABLE "project_env_variables" ADD CONSTRAINT "project_env_variables_project_id_name_unique" UNIQUE("project_id","name");

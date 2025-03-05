@@ -40,3 +40,22 @@ export const ListProjectDeploymentsSchema = z.object({
 })
 
 export type ListProjectDeployments = z.infer<typeof ListProjectDeploymentsSchema>
+
+
+
+export const SettingsSchema = z.object({
+  userId: z.string(),
+  projectId: z.string(),
+  environmentVariables: z.array(z.object({
+    userId: z.string(),
+    projectId: z.string(),
+    name: z.string().min(2, {
+      message: "Environment variable name must be at least 2 characters.",
+    }),
+    value: z.string().min(2, {
+      message: "Environment variable value must be at least 2 characters.",
+    }),
+  })),
+})
+
+export type ProjectSetting = z.infer<typeof SettingsSchema>

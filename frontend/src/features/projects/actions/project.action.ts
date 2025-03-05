@@ -1,6 +1,6 @@
 import queryString from "query-string"
 import { api } from "@/lib/api"
-import { AddProject, DeployProject, EditProject, ListProjectDeployments, ListProjects, ProjectDetail } from "../schema/project.schema"
+import { AddProject, DeployProject, EditProject, ListProjectDeployments, ListProjects, ProjectDetail, ProjectSetting } from "../schema/project.schema"
 
 export const createProjectAction = (payload: AddProject) => {
   return api.post(`/projects`, payload, { withCredentials: true })
@@ -34,4 +34,9 @@ export const listProjectDeploymentsAction = async (payload: ListProjectDeploymen
   const response = await api.get(`/projects/${payload.projectId}/deployments?${params}`, { withCredentials: true })
   const deploymentsResponse = response.data?.data || []
   return deploymentsResponse
+}
+
+
+export const updateProjectSettingsAction = (payload: ProjectSetting) => {
+  return api.put(`/projects/${payload.projectId}/settings`, payload, { withCredentials: true })
 }

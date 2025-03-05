@@ -135,13 +135,33 @@ const projectDetail = async (req: Request, res: Response): Promise<any> => {
   }
 }
 
+const updateSettings = async (req: Request, res: Response): Promise<any> => {
+  const userId = req.user?.sub
+
+  try {
+
+    const project = await ProjectService.updateSettings({ ...req.body, userId })
+
+    return res.status(200).json({
+      message: "Project settings updated successfully",
+      data: project
+    })
+  } catch (error) {
+    return res.status(500).json({
+      status: "Error",
+      error: error?.message || "Something went wrong"
+    })
+  }
+}
+
 const ProjectController = {
   deployProject,
   createProject,
   updateProject,
   listProjects,
   projectDetail,
-  listProjectDeployments
+  listProjectDeployments,
+  updateSettings
 }
 
 export default ProjectController
