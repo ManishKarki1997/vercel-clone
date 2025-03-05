@@ -3,7 +3,7 @@ import { generateSlug } from "random-word-slugs";
 
 import ProjectService from "../services/project.service";
 import { Config } from "../../../config/env";
-import type { ListProjectDeployments } from "../schema/project.schema";
+import type { ListProjectDeployments, ListProjectSettings } from "../schema/project.schema";
 
 const deployProject = async (req: Request, res: Response): Promise<any> => {
 
@@ -154,6 +154,30 @@ const updateSettings = async (req: Request, res: Response): Promise<any> => {
   }
 }
 
+const listSettings = async (req: Request, res: Response): Promise<any> => {
+  const userId = req.user?.sub
+
+  try {
+
+    const payload: ListProjectSettings = {
+      projectId: req.params.id,
+      userId: userId as string
+    }
+
+    const settings = await ProjectService.listSettings(payload)
+
+    return res.status(200).json({
+      message: "Project settings listed successfully",
+      data: settings
+    })
+  } catch (error) {
+    return res.status(500).json({
+      status: "Error",
+      error: error?.message || "Something went wrong"
+    })
+  }
+}
+
 const ProjectController = {
   deployProject,
   createProject,
@@ -161,7 +185,8 @@ const ProjectController = {
   listProjects,
   projectDetail,
   listProjectDeployments,
-  updateSettings
+  updateSettings,
+  listSettings
 }
 
 export default ProjectController

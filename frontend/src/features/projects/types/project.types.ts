@@ -1,3 +1,5 @@
+import { PROJECT_DETAIL_TABS } from "../constants/project-constants";
+
 export type Project = {
   id: string;
   name: string;
@@ -16,4 +18,20 @@ export type ProjectPage = {
   page: number;
   hasNextPage: boolean;
   projects: Project[];
+}
+
+export type ProjectDetailTabValue = (typeof PROJECT_DETAIL_TABS)[number]["value"];
+
+
+
+export type ProjectEnvironmentVariables = Array<{
+  name: string;
+  value: string;
+  projectId: string;
+  userId: string;
+  id: string;
+}>
+
+export type ProjectSettingResponse = {
+  environmentVariables: ProjectEnvironmentVariables;
 }

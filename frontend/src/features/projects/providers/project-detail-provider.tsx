@@ -3,7 +3,7 @@ import React from "react";
 import { projectDetailAction } from "../actions/project.action";
 import { useParams, useSearchParams } from "react-router";
 import { AxiosError } from "axios";
-import { Project } from "../types/project.types";
+import { Project, ProjectDetailTabValue } from "../types/project.types";
 
 export const ProjectDetailContext = React.createContext<ProjectDetailContextType>({
   project: null,
@@ -17,10 +17,13 @@ type ProjectDetailContextType = {
   isLoading: boolean;
   isFetching: boolean;
   error: AxiosError | null;
+  activeTab: ProjectDetailTabValue;
+  setActiveTab: (tab: ProjectDetailTabValue) => void;
 }
 
 export const ProjectDetailProvider = ({ children }: { children: React.ReactNode }) => {
 
+  const [activeTab, setActiveTab] = React.useState<ProjectDetailTabValue>('details')
 
   const [searchParams] = useSearchParams()
   // const { id } = useParams()
@@ -43,7 +46,9 @@ export const ProjectDetailProvider = ({ children }: { children: React.ReactNode 
       project: (project as Project) || null,
       isFetching,
       isLoading,
-      error: (error as AxiosError) || null
+      error: (error as AxiosError) || null,
+      activeTab,
+      setActiveTab
     }}>
     {children}
   </ProjectDetailContext.Provider>

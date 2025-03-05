@@ -5,25 +5,35 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { useAuth } from '@/hooks/use-auth'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { AxiosError } from 'axios'
 import { PlusIcon, TreesIcon, XIcon } from 'lucide-react'
 import { useFieldArray, useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 import { z } from 'zod'
-import { updateProjectSettingsAction } from '../../actions/project.action'
-import { DEFAULT_PROJECT_SETTINGS } from '../../constants/project-constants'
+import { listProjectSettingsAction, updateProjectSettingsAction } from '../../actions/project.action'
+import { DEFAULT_PROJECT_SETTINGS } from '../../constants/project-constants.tsx'
 import { useProjectDetail } from '../../providers/project-detail-provider'
 import { SettingsSchema } from '../../schema/project.schema'
+import { ProjectSettingResponse } from '../../types/project.types.ts'
+import React from 'react'
 
 
 
 const DEFAULT_REQUIRED_ENV_NAMES = DEFAULT_PROJECT_SETTINGS.map(env => env.name)
 
+
 function ProjectSettings() {
 
   const { project } = useProjectDetail()
   const { user } = useAuth()
+
+
+  const fallbackProjectSettings = DEFAULT_PROJECT_SETTINGS.map(env => ({
+    ...env,
+    userId: user?.id || "",
+    projectId: project?.id || "",
+  }))
 
   const form = useForm<z.infer<typeof SettingsSchema>>({
     resolver: zodResolver(SettingsSchema),
@@ -31,36 +41,47 @@ function ProjectSettings() {
       userId: user?.id || "",
       projectId: project?.id || "",
       environmentVariables: [
-        {
-          name: "BUILD_COMMAND",
-          value: "npm run build",
-          userId: user?.id || "",
-          projectId: project?.id || "",
-        },
-        {
-          name: "INSTALL_COMMAND",
-          value: "npm install",
-          userId: user?.id || "",
-          projectId: project?.id || "",
-        },
-        {
-          name: "OUTPUT_FOLDER_NAME",
-          value: "dist",
-          userId: user?.id || "",
-          projectId: project?.id || "",
-        },
+        // {
+        //   name: "BUILD_COMMAND",
+        //   value: "npm run build",
+        //   userId: user?.id || "",
+        //   projectId: project?.id || "",
+        // },
+        // {
+        //   name: "INSTALL_COMMAND",
+        //   value: "npm install",
+        //   userId: user?.id || "",
+        //   projectId: project?.id || "",
+        // },
+        // {
+        //   name: "OUTPUT_FOLDER_NAME",
+        //   value: "dist",
+        //   userId: user?.id || "",
+        //   projectId: project?.id || "",
+        // },
       ]
     },
   })
-  console.log("form errors ", form.formState.errors)
+
+  const {
+    data: projectSettingsData
+  } = useQuery({
+    queryFn: () => listProjectSettingsAction({ projectId: project!.id }),
+    queryKey: ['project-detail', 'settings', { projectId: project?.id }],
+    enabled: !!project?.id
+  })
+
+  const settingsResponse = projectSettingsData as ProjectSettingResponse
+
   const queryClient = useQueryClient()
 
   const updateSettingsMutation = useMutation({
     mutationFn: updateProjectSettingsAction,
     onSuccess: () => {
       toast.success("Project settings saved successfully", { id: "updating-project-settings" })
-      queryClient.invalidateQueries({ queryKey: ['projects'] })
-      queryClient.invalidateQueries({ queryKey: ['project-detail', { slug: project?.slug }] })
+      // queryClient.invalidateQueries({ queryKey: ['projects'] })
+      // queryClient.invalidateQueries({ queryKey: ['project-detail', { slug: project?.slug }] })
+      queryClient.invalidateQueries({ queryKey: ['project-detail', 'settings', { projectId: project?.id }] })
     },
     onError: (err: AxiosError) => {
       toast.error(err?.response?.data?.message || "Something went wrong while updating project settings", { id: "updating-project-settings" })
@@ -94,6 +115,17 @@ function ProjectSettings() {
     console.log(values)
   }
 
+  React.useEffect(() => {
+
+
+    const envVariablesArray =
+      !settingsResponse?.environmentVariables || !settingsResponse?.environmentVariables?.length
+        ? fallbackProjectSettings
+        : settingsResponse?.environmentVariables
+
+    form.setValue("environmentVariables", envVariablesArray)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form, settingsResponse])
 
 
   return (
@@ -220,7 +252,10 @@ function ProjectSettings() {
             </div>
 
             <div className="my-4">
-              <Button type="submit">Save</Button>
+              <Button
+                disabled={updateSettingsMutation.isPending}
+                type="submit"
+              >Save</Button>
             </div>
 
 

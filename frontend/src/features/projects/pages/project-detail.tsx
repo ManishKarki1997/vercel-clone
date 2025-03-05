@@ -4,30 +4,38 @@ import ProjectDetailHeader from '../components/detail/project-detail-header'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { InfoIcon, PlayIcon, SettingsIcon } from 'lucide-react'
 import ProjectBasicInfo from '../components/detail/project-basic-info'
-import { ProjectDetailProvider } from '../providers/project-detail-provider'
+import { ProjectDetailProvider, useProjectDetail } from '../providers/project-detail-provider'
 import ProjectDeployments from '../components/detail/project-deployments'
 import ProjectSettings from '../components/detail/project-settings'
+import { PROJECT_DETAIL_TABS } from '../constants/project-constants'
+import { ProjectDetailTabValue } from '../types/project.types'
 
 function ProjectDetail() {
+
+  const {
+    activeTab,
+    setActiveTab
+  } = useProjectDetail()
+
   return (
     <div className='py-4 bg-background'>
       <AppContainer className=''>
         <ProjectDetailHeader />
 
-        <Tabs defaultValue="settings" className=" mt-12">
+        <Tabs
+          value={activeTab}
+          onValueChange={(_value) => setActiveTab(_value as ProjectDetailTabValue)}
+          className=" mt-12">
           <TabsList className='h-10'>
-            <TabsTrigger value="details" className='px-8 py-2 gap-2'>
-              <InfoIcon size={18} />
-              Details
-            </TabsTrigger>
-            <TabsTrigger value="deployments" className='px-8 py-2 gap-2'>
-              <PlayIcon size={18} />
-              Deployments
-            </TabsTrigger>
-            <TabsTrigger value="settings" className='px-8 py-2 gap-2'>
-              <SettingsIcon size={18} />
-              Settings
-            </TabsTrigger>
+            {
+              PROJECT_DETAIL_TABS.map(tab => (
+                <TabsTrigger key={tab.value} value={tab.value} className='px-8 py-2 gap-2'>
+                  {tab.icon}
+                  {tab.name}
+                </TabsTrigger>
+
+              ))
+            }
           </TabsList>
 
           <TabsContent value="details" className='py-4'>

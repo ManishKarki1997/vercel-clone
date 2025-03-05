@@ -59,3 +59,10 @@ export const SettingsSchema = z.object({
 })
 
 export type ProjectSetting = z.infer<typeof SettingsSchema>
+
+export const ListProjectSettingsSchema = z.object({
+  projectId: z.string(),
+})
+
+export type ListProjectSettings = z.infer<typeof ListProjectSettingsSchema>
+

@@ -2,7 +2,7 @@ import { RunTaskCommand } from "@aws-sdk/client-ecs"
 import { Config } from "../../../config/env"
 import type { RunProjectPayload } from "../types/project.type"
 import { ecsClient } from "../../../utils/aws"
-import type { AddProject, DeployProject, EditProject, ListProjectDeployments, ListProjects, PatchDeployment, PatchProject, ProjectDetail, ProjectSetting } from "../schema/project.schema"
+import type { AddProject, DeployProject, EditProject, ListProjectDeployments, ListProjects, ListProjectSettings, PatchDeployment, PatchProject, ProjectDetail, ProjectSetting } from "../schema/project.schema"
 import { database } from "../../../db/drizzle"
 import { deployments, profiles, projectEnvVariables, projects } from "../../../db/schema"
 import { getDeploymentUrl, getRange } from "../../../utils/utils"
@@ -445,6 +445,29 @@ const updateSettings = async (payload: ProjectSetting) => {
 
 }
 
+const listSettings = async (payload: ListProjectSettings) => {
+  const environmentVariables =
+    await database
+      .select({
+        name: projectEnvVariables.name,
+        value: projectEnvVariables.value,
+        id: projectEnvVariables.id,
+        userId: projectEnvVariables.userId,
+        projectId: projectEnvVariables.projectId,
+      })
+      .from(projectEnvVariables)
+      .where(
+        and(
+          eq(projectEnvVariables.projectId, payload.projectId),
+          eq(projectEnvVariables.userId, payload.userId)
+        )
+      )
+
+  return {
+    environmentVariables
+  }
+}
+
 
 const ProjectService = {
   deployProject,
@@ -453,7 +476,8 @@ const ProjectService = {
   listProjects,
   projectDetail: getProjectDetail,
   listProjectDeployments,
-  updateSettings
+  updateSettings,
+  listSettings
 }
 
 export default ProjectService
