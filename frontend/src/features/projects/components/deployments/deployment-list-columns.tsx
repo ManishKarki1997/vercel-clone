@@ -28,7 +28,7 @@ export const useDeploymentListColumns = () => {
         accessorKey: "completedAt",
         header: "Completed At",
         cell: ({ row }) => <p>
-          <span className='text-primary'>
+          <span className='font-medium'>
             {
               !row.original.completedAt || !row.original.createdAt ? "" :
                 <>

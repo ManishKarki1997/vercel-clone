@@ -1,4 +1,9 @@
 {
+  "scripts":{
+    "test":"sudo docker build -t build-server . && sudo docker run -it -e GIT_REPOSITORY_URL=https://github.com/piyushgarg-dev/piyush-vite-app -e PROJECT_ID=1654786e-5ce7-47df-8620-9b5484c04cdd -e AWS_REGION=eu-north-1 -e AWS_ACCESS_KEY=AKIATBKRMZT3I43YGQ7I -e AWS_SECRET_ACCESS_KEY=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 -e AWS_S3_BUCKET=vercel-app build-server",
+    "compose":"sudo docker build -t build-server . && sudo docker compose up --build", 
+    "deploy":"sudo docker build -t build-server . && docker tag build-server:latest 209013492982.dkr.ecr.eu-north-1.amazonaws.com/build-server:latest && docker push 209013492982.dkr.ecr.eu-north-1.amazonaws.com/build-server:latest"
+  },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.750.0",
     "dotenv": "^16.4.7",

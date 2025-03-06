@@ -6,6 +6,9 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import EmptyState from '@/features/app/components/empty-state';
 import { NotebookIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
+import { useProjectDetail } from '../../providers/project-detail-provider';
 
 type Props = {
   onClose: () => void
@@ -19,7 +22,9 @@ function DeploymentLogs({
   deployment,
 }: Props) {
 
+  const { project } = useProjectDetail()
   const { socket } = useSocket()
+  const queryClient = useQueryClient();
   const [deploymentLogs, setDeploymentLogs] = React.useState<DeploymentLog[]>([])
 
   React.useEffect(() => {
@@ -30,7 +35,17 @@ function DeploymentLogs({
     socket.on("log", logObj => {
       const parsedDeploymentLog: DeploymentLog = JSON.parse(logObj)
       setDeploymentLogs(prev => prev.concat(parsedDeploymentLog))
-      console.log("Received log ", logObj)
+      // console.log("Received log ", parsedDeploymentLog)
+      if (parsedDeploymentLog?.isCompleted) {
+        if (parsedDeploymentLog?.hasError) {
+          toast.error(`Project deployment failed`)
+        } else {
+          toast.success(`Project deployed successfully`)
+        }
+
+        queryClient.invalidateQueries({ queryKey: ['deployment', { slug: project?.slug }] })
+
+      }
     })
 
 

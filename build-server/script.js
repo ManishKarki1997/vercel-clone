@@ -19,8 +19,20 @@ const s3Client = new S3Client({
   }
 });
 
+const decodeStringifiedEnv = (stringified) => 
+  stringified
+  .split(',')
+  .reduce((obj, pair) => {
+    const [key, value] = pair.split(':');
+    obj[key] = value; // Convert value to proper type if necessary (e.g., parse integers, booleans)
+    return obj;
+  }, {});
+
 
 const PROJECT_ID = Config.PROJECT_ID;
+const PROJECT_SLUG = Config.PROJECT_SLUG;
+const METADATA = Config.PROJECT_METADATA ? decodeStringifiedEnv(Config.PROJECT_METADATA) : {};
+
 
 // let logId = 1;
 // if (Config.isDebugMode) {
@@ -38,10 +50,18 @@ async function waitFor(ms = 100) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+const makeBuildPathIfNotExist = (outputPath) => {
+  if (!fs.existsSync(outputPath)) {
+    fs.mkdirSync(outputPath)
+  }
+}
+
 async function init() {
-  const outputPath = path.join(__dirname, "repo");
+  const outputPath = path.join(__dirname, "builds", PROJECT_ID);
+  makeBuildPathIfNotExist(outputPath)
   
   publishLog({
+    metadata:METADATA,
     deploymentId: PROJECT_ID,      
     log: "Running install and build commands", 
     type:"info"
@@ -51,34 +71,38 @@ async function init() {
 
   p.stdout.on("data", log => {
     publishLog({
+      metadata:METADATA,
       deploymentId: PROJECT_ID,      
       log: log.toString(),
       type:"info"
-    })
-    console.log("Building app", log);
+    })  
   });
 
   p.stdout.on("error", error => {
     publishLog({
+      metadata:METADATA,
       deploymentId: PROJECT_ID,      
       log: error.toString(),
-      type:"error"
+      isCompleted:true,
+      hasError:true
     })
+    
     console.log("Error", error);
   });
 
-  p.on("close", async () => {
-    console.log("Build complete");    
+  p.on("close", async () => {    
     publishLog({
+      metadata:METADATA,
       deploymentId: PROJECT_ID,      
       log: "Build Complete",
-      type:"success"
+      type:"success",
     })
-    const distFolderPath = path.join(__dirname, "repo", "dist");
+    const distFolderPath = path.join(outputPath, "dist");
     const distFolderContents = fs.readdirSync(distFolderPath, { recursive: true });
 
 
     publishLog({
+      metadata:METADATA,
       deploymentId: PROJECT_ID,      
       log: "Preparing to upload built folder",
       type:"info"
@@ -93,6 +117,7 @@ async function init() {
 
       
       publishLog({
+        metadata:METADATA,
         deploymentId: PROJECT_ID,      
         log: `Uploading ${file}`,
         type:"info"
@@ -108,6 +133,7 @@ async function init() {
       await s3Client.send(command);
       
       publishLog({
+        metadata:METADATA,
         deploymentId: PROJECT_ID,      
         log: `Uploaded ${file}`,
         type:"info"
@@ -117,12 +143,23 @@ async function init() {
 
 
     publishLog({
+      metadata:METADATA,
       deploymentId: PROJECT_ID,      
       log: "Deployed Successfully.",
       type:"success"
     })
 
     await waitFor(2000)
+
+    
+    publishLog({
+      metadata:METADATA,
+      deploymentId: PROJECT_ID,      
+      log: "Process Complete",
+      isCompleted:true,
+      hasError:false
+    })
+
     process.exit(0)
   });
 

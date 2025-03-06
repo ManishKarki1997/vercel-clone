@@ -3,6 +3,8 @@ export type DeploymentLog = {
   date: string;
   deploymentId: string;
   type?: string;
+  isCompleted?: boolean,
+  hasError?: boolean
 }
 
 export type Deployment = {

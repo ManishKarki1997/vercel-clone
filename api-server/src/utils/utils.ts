@@ -17,3 +17,11 @@ export const getDeploymentUrl = (slug: string) => {
   return url
 
 }
+
+export const encodeObjectToEnvVariable = (object: Record<string, string>) => {
+  const stringified = Object.entries(object)
+    .map(([key, value]) => `${key}:${value}`)
+    .join(',');
+
+  return stringified
+}

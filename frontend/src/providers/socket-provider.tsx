@@ -26,12 +26,10 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
     if (!socket) return
 
     socket.on("connect", () => {
-      console.log("socket connected")
       setIsConnected(true)
     })
 
     socket.on("disconnect", () => {
-      console.log("socket disconnected")
       setIsConnected(true)
     })
 

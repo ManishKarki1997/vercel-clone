@@ -1,16 +1,55 @@
 import { RunTaskCommand } from "@aws-sdk/client-ecs"
 import { Config } from "../../../config/env"
-import type { RunProjectPayload } from "../types/project.type"
+import type { ProjectDeploymentMetadata, RunProjectPayload } from "../types/project.type"
 import { ecsClient } from "../../../utils/aws"
 import type { AddProject, DeployProject, EditProject, ListProjectDeployments, ListProjects, ListProjectSettings, PatchDeployment, PatchProject, ProjectDetail, ProjectSetting } from "../schema/project.schema"
 import { database } from "../../../db/drizzle"
 import { deployments, profiles, projectEnvVariables, projects } from "../../../db/schema"
-import { getDeploymentUrl, getRange } from "../../../utils/utils"
+import { encodeObjectToEnvVariable, getDeploymentUrl, getRange } from "../../../utils/utils"
 import { and, count, desc, eq, inArray, or } from "drizzle-orm"
 import { slugify } from "../../../utils/slugify"
 import { ForbiddenError, NotFoundError, UserInputError } from "../../../utils/error"
 import { DEFAULT_PROJECT_SETTINGS } from "../constants/project-constants"
 import { buildDrizzleConflictUpdateColumns } from "../../../utils/database"
+import { triggerLocalBuild } from "../utils/trigger-deploy"
+import { sendDeploymentEvent } from "../../../db/socket"
+
+const getRequiredDeploymentEnvVariables = () => {
+  return [
+    {
+      name: "AWS_REGION",
+      value: Config.AWS_REGION
+    },
+    {
+      name: "AWS_ACCESS_KEY",
+      value: Config.AWS_ACCESS_KEY
+    },
+    {
+      name: "AWS_SECRET_ACCESS_KEY",
+      value: Config.AWS_SECRET_ACCESS_KEY
+    },
+    {
+      name: "AWS_S3_BUCKET",
+      value: Config.AWS_S3_BUCKET
+    },
+    {
+      name: "REDIS_PORT",
+      value: String(Config.REDIS_PORT)
+    },
+    {
+      name: "REDIS_USERNAME",
+      value: Config.REDIS_USERNAME
+    },
+    {
+      name: "REDIS_PASSWORD",
+      value: Config.REDIS_PASSWORD
+    },
+    {
+      name: "REDIS_HOST",
+      value: Config.REDIS_HOST
+    },
+  ]
+}
 
 const checkProjectBelongsToUser = async (payload: {
   userId: string;
@@ -53,6 +92,8 @@ const checkProjectBelongsToUser = async (payload: {
   return project
 }
 
+
+
 const upsertDefaultProjectEnvVariables = async (payload: { projectId: string, userId: string }) => {
   const envVariables = DEFAULT_PROJECT_SETTINGS.map(env => ({
     ...env,
@@ -92,27 +133,77 @@ const patchProject = async (payload: PatchProject) => {
       )
 }
 
+const handleProjectDeployed = async (payload: ProjectDeploymentMetadata) => {
+  // console.log("handleProjectDeployed", payload)
+  await patchProject({
+    id: payload.projectId,
+    userId: payload.userId,
+    deploymentUrl: payload.deploymentUrl,
+    slug: payload.projectSlug,
+  })
+
+  await updateProjectDeployment({
+    id: payload.deploymentId,
+    status: payload.error ? "Failed" : "Completed",
+    userId: payload.userId,
+    completedAt: new Date(),
+  })
+}
+
 const deployProject = async (payload: DeployProject) => {
 
-  // create deployment
-  const project = await
-    getProjectDetail({ slug: payload.slug })
+  await database.transaction(async (tx) => {
+
+    // create deployment
+    const project = await
+      getProjectDetail({ slug: payload.slug })
 
 
-  if (!project) {
-    throw new UserInputError("Project does not exist")
-  }
+    if (!project) {
+      throw new UserInputError("Project does not exist")
+    }
 
-  if (project.userId !== payload.userId) {
-    throw new ForbiddenError("You do not own this project")
-  }
+    if (project.userId !== payload.userId) {
+      throw new ForbiddenError("You do not own this project")
+    }
 
-  if (project.status !== "Active") {
-    throw new ForbiddenError("Project is not active. Please activate the project first")
-  }
+    if (project.status !== "Active") {
+      throw new ForbiddenError("Project is not active. Please activate the project first")
+    }
 
 
-  if (!Config.isDebugMode) {
+    const settings = await ProjectService.listSettings({
+      projectId: project.id,
+      userId: payload.userId
+    })
+
+    const envVariables = settings.environmentVariables.map(env => ({ name: env.name, value: env.value }))
+
+    for (const envVariable of DEFAULT_PROJECT_SETTINGS) {
+      if (!envVariables.find(env => env.name === envVariable.name)) {
+        envVariables.push(envVariable)
+      }
+    }
+
+
+
+    envVariables.push({
+      name: "GIT_REPOSITORY_URL",
+      value: project.gitUrl
+    })
+
+    envVariables.push({
+      name: "PROJECT_ID",
+      value: project.id
+    })
+
+    envVariables.push({
+      name: "PROJECT_SLUG",
+      value: project.slug
+    })
+
+
+
 
     const existingDeployment = await
       database
@@ -130,14 +221,34 @@ const deployProject = async (payload: DeployProject) => {
     // }
 
 
+
+
+    // console.log("containerOverridesEnvs", containerOverridesEnvs)
+    // return;
+
     const [deployment] = await
-      database
+      tx
         .insert(deployments)
         .values({
           projectId: project.id,
           status: "Running",
           userId: payload.userId
         }).returning()
+
+    envVariables.push({
+      name: "PROJECT_METADATA",
+      value: encodeObjectToEnvVariable({
+        projectId: project.id,
+        projectSlug: project.slug,
+        deploymentId: deployment.id,
+        userId: payload.userId,
+        deploymentUrl: deployment.deploymentUrl || ""
+      })
+    })
+
+    const containerOverridesEnvs = [...getRequiredDeploymentEnvVariables(), ...envVariables]
+    console.log("containerOverridesEnvs", containerOverridesEnvs)
+
 
     const runProjectPayload = {
       gitRepoUrl: project.gitUrl,
@@ -146,54 +257,34 @@ const deployProject = async (payload: DeployProject) => {
 
 
 
-    const command = new RunTaskCommand({
-      cluster: Config.AWS_CLUSTER_ARN,
-      taskDefinition: Config.AWS_TASK_ARN,
-      launchType: "FARGATE",
-      count: 1,
-      networkConfiguration: {
-        awsvpcConfiguration: {
-          subnets: Config.AWS_TASK_SUBNETS,
-          securityGroups: [Config.AWS_TASK_SECURITY_GROUP],
-          assignPublicIp: "ENABLED",
-        }
-      },
-      overrides: {
-        containerOverrides: [
-          {
-            name: "builder-image",
-            environment: [
-              {
-                name: "AWS_REGION",
-                value: Config.AWS_REGION
-              },
-              {
-                name: "AWS_ACCESS_KEY",
-                value: Config.AWS_ACCESS_KEY
-              },
-              {
-                name: "AWS_SECRET_ACCESS_KEY",
-                value: Config.AWS_SECRET_ACCESS_KEY
-              },
-              {
-                name: "AWS_S3_BUCKET",
-                value: Config.AWS_S3_BUCKET
-              },
-              {
-                name: "GIT_REPOSITORY_URL",
-                value: runProjectPayload.gitRepoUrl
-              },
-              {
-                name: "PROJECT_ID",
-                value: runProjectPayload.projectId
-              },
-            ]
-          }
-        ]
-      }
-    })
+    // const command = new RunTaskCommand({
+    //   cluster: Config.AWS_CLUSTER_ARN,
+    //   taskDefinition: Config.AWS_TASK_ARN,
+    //   launchType: "FARGATE",
+    //   count: 1,
+    //   networkConfiguration: {
+    //     awsvpcConfiguration: {
+    //       subnets: Config.AWS_TASK_SUBNETS,
+    //       securityGroups: [Config.AWS_TASK_SECURITY_GROUP],
+    //       assignPublicIp: "ENABLED",
+    //     }
+    //   },
+    //   overrides: {
+    //     containerOverrides: [
+    //       {
+    //         name: "builder-image",
+    //         environment: containerOverridesEnvs
+    //       }
+    //     ]
+    //   }
+    // })
 
-    await ecsClient.send(command)
+    // await ecsClient.send(command)
+    await triggerLocalBuild({
+      userId: payload.userId,
+      projectId: project.id,
+      environmentVariables: containerOverridesEnvs
+    })
 
     const deploymentUrl = getDeploymentUrl(runProjectPayload.projectId)
 
@@ -209,7 +300,7 @@ const deployProject = async (payload: DeployProject) => {
       userId: payload.userId,
       deploymentUrl
     })
-  }
+  })
 
 }
 
@@ -477,7 +568,8 @@ const ProjectService = {
   projectDetail: getProjectDetail,
   listProjectDeployments,
   updateSettings,
-  listSettings
+  listSettings,
+  handleProjectDeployed
 }
 
 export default ProjectService
