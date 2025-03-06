@@ -15,7 +15,6 @@ const makeProjectEnv = async (payload: { envsFolderLocation: string; envContent:
   }
 
   fs.writeFileSync(payload.projectEnvPath, payload.envContent);
-  console.log("envContent", payload.envContent)
 }
 
 export const triggerLocalBuild = async (payload: TriggerLocalBuildPayload) => {
@@ -40,11 +39,11 @@ export const triggerLocalBuild = async (payload: TriggerLocalBuildPayload) => {
   // console.log("dirname", path.dirname(__filename), BUILD_SERVER_PATH, command)
   // const process = exec(command);
 
-  dockerProcess.on("data", (data) => console.log(data.toString()));
-  dockerProcess.on("error", (err) => console.log(err.toString()));
+  // dockerProcess.on("data", (data) => console.log(data.toString()));
+  // dockerProcess.on("error", (err) => console.log(err.toString()));
 
-  dockerProcess.on("exit", (code) => {
-    console.log(`Process exited with code ${code}`);
-  });
+  // dockerProcess.on("exit", (code) => {
+  //   console.log(`Process exited with code ${code}`);
+  // });
 
 }
