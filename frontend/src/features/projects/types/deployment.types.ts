@@ -1,6 +1,7 @@
 export type DeploymentLog = {
   log: string;
-  timestamp: string;
+  timestamp?: string;
+  date?: string;
   deploymentId: string;
   type?: string;
   isCompleted?: boolean,

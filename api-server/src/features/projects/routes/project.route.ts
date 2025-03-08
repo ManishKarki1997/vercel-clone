@@ -4,6 +4,7 @@ import { auth } from '../../../utils/auth';
 
 const ProjectRouter = express.Router();
 
+ProjectRouter.get("/slug-to-id/:slug", ProjectController.getProjectIdBySlug)
 
 // TODO add zod schema validation and error formatting later
 ProjectRouter.get("/", auth, ProjectController.listProjects)

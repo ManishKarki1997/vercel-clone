@@ -52,6 +52,30 @@ const getRequiredDeploymentEnvVariables = () => {
   ]
 }
 
+const getProjectIdBySlug = async (slug: string) => {
+
+  const redisProjectId = await redis.get(Config.PROJECT_SLUG_TO_ID_CACHE_KEY(slug))
+
+  if (redisProjectId) {
+    return redisProjectId
+  }
+
+  const [project] = await
+    database
+      .select({
+        id: projects.id,
+        slug: projects.slug
+      })
+      .from(projects)
+      .where(eq(projects.slug, slug))
+
+  if (project?.id) {
+    await redis.set(Config.PROJECT_SLUG_TO_ID_CACHE_KEY(slug), project.id)
+  }
+
+  return project?.id
+}
+
 const checkProjectBelongsToUser = async (payload: {
   userId: string;
   projectId?: string;
@@ -360,6 +384,10 @@ const updateProject = async (payload: EditProject) => {
     updatedAt: new Date()
   }
 
+  if (payload?.slug) {
+    await redis.set(Config.PROJECT_SLUG_TO_ID_CACHE_KEY(payload.slug), String(payload.id))
+  }
+
   const project = await database
     .update(projects)
     .set(updatePayload)
@@ -575,7 +603,7 @@ const saveDeploymentLogs = async (deploymentId: string) => {
 
   const insertPayload = parsedLogs.map(log => ({
     log: log.log,
-    timestamp: log.timestamp ? new Date(log.timestamp) : new Date(),
+    timestamp: log.date ? new Date(log.date) : new Date(),
     deploymentId: log.deploymentId,
     type: log.type,
     userId: log.userId,
@@ -630,7 +658,8 @@ const ProjectService = {
   handleProjectDeployed,
   saveDeploymentLogs,
   listDeploymentLogs,
-  deleteDeployment
+  deleteDeployment,
+  getProjectIdBySlug
 }
 
 export default ProjectService

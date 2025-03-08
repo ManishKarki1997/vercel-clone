@@ -225,6 +225,24 @@ const deleteDeployment = async (req: Request, res: Response): Promise<any> => {
   }
 }
 
+const getProjectIdBySlug = async (req: Request, res: Response): Promise<any> => {
+  const slug = req.params.slug;
+
+  try {
+    const projectId = await ProjectService.getProjectIdBySlug(slug)
+
+    return res.status(200).json({
+      message: "Project id found",
+      data: projectId
+    })
+  } catch (error) {
+    return res.status(500).json({
+      status: "Error",
+      error: error?.message || "Something went wrong"
+    })
+  }
+}
+
 const ProjectController = {
   deployProject,
   createProject,
@@ -235,7 +253,8 @@ const ProjectController = {
   updateSettings,
   listSettings,
   listDeploymentLogs,
-  deleteDeployment
+  deleteDeployment,
+  getProjectIdBySlug
 }
 
 export default ProjectController

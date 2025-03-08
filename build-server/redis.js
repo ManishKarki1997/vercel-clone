@@ -17,11 +17,11 @@ const publisher = new Redis({
   isCompleted,
   hasError
 }) => {
-  const timestamp = new Date().toISOString();
+  const date = new Date().toISOString();
 
   const payload = {
     log,
-    timestamp,
+    date,
     deploymentId,
     type,
     metadata,

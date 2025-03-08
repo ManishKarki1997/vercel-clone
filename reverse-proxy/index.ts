@@ -1,6 +1,7 @@
 import express, { type Request, type Response } from "express";
 import dotenv from "dotenv";
 import httpProxy from 'http-proxy'
+import axios from 'axios'
 
 dotenv.config();
 
@@ -10,18 +11,36 @@ const proxy = httpProxy.createProxy()
 
 const app = express();
 const port = process.env.PORT || 3001;
+const API_SERVER_URL = process.env.API_SERVER_URL
 
-app.use((req, res, next) => {
+const getProjectIdBySlug = async (slug: string) => {
+  if (!API_SERVER_URL) return ""
+  const response = await axios.get(`${API_SERVER_URL}/api/v1/projects/slug-to-id/${slug}`)
+  return response.data?.data || ""
+}
+
+app.get("/not-found", (req: Request, res: Response) => {
+  res.send("Not found");
+});
+
+app.use(async (req, res, next) => {
   if (!AWS_BUCKET_PATH) {
     next()
     return
   }
 
-  const hostname = req.hostname;
+  const hostname = req.hostname || "";
 
-  const subdomain = hostname.split('.')[0];
+  const subdomain = !hostname ? "" : hostname.split('.')[0];
 
-  const resolvePath = `${AWS_BUCKET_PATH}/${subdomain}`
+  const projectId = await getProjectIdBySlug(subdomain)
+  if (!projectId) {
+    return res.send("Project not found")
+  }
+
+
+  const resolvePath = `${AWS_BUCKET_PATH}/${projectId}`
+
 
   return proxy.web(req, res, { target: resolvePath, changeOrigin: true })
 

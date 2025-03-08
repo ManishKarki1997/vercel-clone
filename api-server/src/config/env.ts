@@ -29,4 +29,6 @@ export const Config = {
   REDIS_USERNAME: process.env.REDIS_USERNAME || "",
   REDIS_PASSWORD: process.env.REDIS_PASSWORD || "",
   REDIS_SERVICE_URI: process.env.REDIS_SERVICE_URI || "",
+
+  PROJECT_SLUG_TO_ID_CACHE_KEY: (slug: string) => `project_slug_to_id:${slug}`,
 }

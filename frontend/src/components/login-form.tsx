@@ -33,7 +33,9 @@ export function LoginForm({
       toast.success("Logged in Successfully")
       localStorage.setItem("isLoggedIn", "true")
       queryClient.invalidateQueries({ queryKey: ['profile'] })
-      navigate('/app')
+
+      // TODO redirect to /app when the /app dashboard page is done
+      navigate('/app/projects')
     },
     onError: (err: AxiosError) => {
       toast.error(err?.response?.data?.message || "Something went wrong while logging in")
