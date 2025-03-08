@@ -8,7 +8,7 @@ export const Config = {
   SOCKET_SERVER_PORT: process.env.SOCKET_SERVER_PORT ? Number(process.env.SOCKET_SERVER_PORT) : 3002,
   NODE_ENV: process.env.NODE_ENV,
   FRONTEND_URLS: process.env.FRONTEND_URLS!.split(","),
-  PROXY_SERVER: process.env.PROXY_SERVER || `localhost:3001`,
+  PROXY_SERVER: process.env.PROXY_SERVER || `localhost:9001`,
   AWS_REGION: process.env.AWS_REGION!,
   AWS_ACCESS_KEY: process.env.AWS_ACCESS_KEY!,
   AWS_SECRET_ACCESS_KEY: process.env.AWS_SECRET_ACCESS_KEY!,

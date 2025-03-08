@@ -117,27 +117,31 @@ function DeploymentLogs({
 
               </EmptyState>
             }
-            <Table>
 
-              <TableHeader>
-                <TableRow>
-                  <TableHead >Timestamp</TableHead>
-                  <TableHead>Log</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+            {
+              deploymentLogs.length > 0 &&
+              <Table>
 
-                {
-                  deploymentLogs.length > 0 &&
-                  deploymentLogs.map((log, idx) => (
-                    <TableRow key={idx}>
-                      <TableCell width={"250px"} className='text-base text-muted-foreground font-mono'>{log?.timestamp ? new Date(log?.timestamp).toLocaleString() : log?.date ? new Date(log?.date).toLocaleDateString() : ""}</TableCell>
-                      <TableCell className={cn(' text-base text-foreground font-medium', { 'text-red-500': log.type === "error", 'text-green-500': log.type === "success" })}>{log.log}</TableCell>
-                    </TableRow>
-                  ))
-                }
-              </TableBody>
-            </Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead >Timestamp</TableHead>
+                    <TableHead>Log</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+
+                  {
+                    deploymentLogs.map((log, idx) => (
+                      <TableRow key={idx}>
+                        <TableCell width={"250px"} className='text-base text-muted-foreground font-mono'>{log?.timestamp ? new Date(log?.timestamp).toLocaleString() : log?.date ? new Date(log?.date).toLocaleDateString() : ""}</TableCell>
+                        <TableCell className={cn(' text-base text-foreground font-medium', { 'text-red-500': log.type === "error", 'text-green-500': log.type === "success" })}>{log.log}</TableCell>
+                      </TableRow>
+                    ))
+                  }
+                </TableBody>
+              </Table>
+            }
+
           </div>
         </ScrollArea>
       </DialogContent>
