@@ -16,6 +16,8 @@ git pull
  cd $FRONTEND_DIR || exit
  npm run build
 
+ cp dist ../api-server/dist
+
 # going to the root directory
 cd ../
 
