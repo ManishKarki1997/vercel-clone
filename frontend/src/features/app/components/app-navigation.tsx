@@ -1,5 +1,4 @@
-import { NavigationMenu, NavigationMenuContent, NavigationMenuItem, NavigationMenuLink, NavigationMenuList, NavigationMenuTrigger, navigationMenuTriggerStyle } from '@/components/ui/navigation-menu'
-import React from 'react'
+import { NavigationMenu, NavigationMenuItem, NavigationMenuList, navigationMenuTriggerStyle } from '@/components/ui/navigation-menu'
 import { Link } from 'react-router'
 
 const Links = [
@@ -7,14 +6,14 @@ const Links = [
     name: "Projects",
     path: "/app/projects"
   },
-  {
-    name: "Deployments",
-    path: "/app/deployments"
-  },
-  {
-    name: "Logs",
-    path: "/app/logs"
-  },
+  // {
+  //   name: "Deployments",
+  //   path: "/app/deployments"
+  // },
+  // {
+  //   name: "Logs",
+  //   path: "/app/logs"
+  // },
 ]
 
 

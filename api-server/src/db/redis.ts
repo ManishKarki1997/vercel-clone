@@ -11,12 +11,16 @@ import ProjectService from '../features/projects/services/project.service'
 //   password: Config.REDIS_PASSWORD,
 // })
 
-const subscriber = new Redis({
+const redisConfig = {
   username: Config.REDIS_USERNAME,
   password: Config.REDIS_PASSWORD,
   host: Config.REDIS_HOST,
   port: Config.REDIS_PORT
-})
+}
+
+const subscriber = new Redis(redisConfig)
+
+export const redis = new Redis(redisConfig)
 
 export const initSubscribeToLogs = () => {
   subscriber.psubscribe(`logs*`)
@@ -24,10 +28,14 @@ export const initSubscribeToLogs = () => {
     const deploymentId = channel.split(":")[1]
     const parsedLog = JSON.parse(message)
     // console.log(`Received log `, parsedLog)
+    await redis.rpush(`deployment_logs:${deploymentId}`, message);
+
     if (parsedLog?.isCompleted) {
       // cleanup stuff
       const metadata = parsedLog.metadata as ProjectDeploymentMetadata
       await ProjectService.handleProjectDeployed({ ...metadata, error: parsedLog?.hasError })
+      await ProjectService.saveDeploymentLogs(deploymentId)
+      await redis.del(`deployment_logs:${deploymentId}`);
     }
     sendDeploymentEvent({ channelId: channel, log: message })
 

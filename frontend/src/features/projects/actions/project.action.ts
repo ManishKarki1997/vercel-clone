@@ -1,6 +1,6 @@
 import queryString from "query-string"
 import { api } from "@/lib/api"
-import { AddProject, DeployProject, EditProject, ListProjectDeployments, ListProjects, ListProjectSettings, ProjectDetail, ProjectSetting } from "../schema/project.schema"
+import { AddProject, DeleteDeployment, DeployProject, EditProject, ListDeploymentLogs, ListProjectDeployments, ListProjects, ListProjectSettings, ProjectDetail, ProjectSetting } from "../schema/project.schema"
 
 export const createProjectAction = (payload: AddProject) => {
   return api.post(`/projects`, payload, { withCredentials: true })
@@ -47,4 +47,17 @@ export const listProjectSettingsAction = async (payload: ListProjectSettings) =>
   const response = await api.get(`/projects/${payload.projectId}/settings?${params}`, { withCredentials: true })
   const settingsResponse = response.data?.data || []
   return settingsResponse
+}
+
+export const listDeploymentLogsAction = async (payload: ListDeploymentLogs) => {
+  const params = queryString.stringify(payload)
+  const response = await api.get(`/projects/deployments/${payload.deploymentId}/logs?${params}`, { withCredentials: true })
+  const logsResponse = response.data?.data || []
+  return logsResponse
+}
+
+
+export const deleteDeploymentAction = (payload: DeleteDeployment) => {
+  const params = queryString.stringify(payload)
+  return api.delete(`/projects/deployments/${payload.deploymentId}?${params}`, { withCredentials: true })
 }

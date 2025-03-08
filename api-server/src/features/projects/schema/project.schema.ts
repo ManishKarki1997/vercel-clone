@@ -101,3 +101,17 @@ export const ListProjectSettingsSchema = z.object({
 })
 
 export type ListProjectSettings = z.infer<typeof ListProjectSettingsSchema>
+
+export const ListDeploymentLogsSchema = z.object({
+  userId: z.string(),
+  deploymentId: z.string(),
+})
+
+export type ListDeploymentLogs = z.infer<typeof ListDeploymentLogsSchema>
+
+export const DeleteDeploymentSchema = z.object({
+  userId: z.string(),
+  deploymentId: z.string(),
+})
+
+export type DeleteDeployment = z.infer<typeof DeleteDeploymentSchema>

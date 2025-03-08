@@ -3,7 +3,7 @@ import { generateSlug } from "random-word-slugs";
 
 import ProjectService from "../services/project.service";
 import { Config } from "../../../config/env";
-import type { ListProjectDeployments, ListProjectSettings } from "../schema/project.schema";
+import type { DeleteDeployment, ListDeploymentLogs, ListProjectDeployments, ListProjectSettings } from "../schema/project.schema";
 
 const deployProject = async (req: Request, res: Response): Promise<any> => {
 
@@ -178,6 +178,53 @@ const listSettings = async (req: Request, res: Response): Promise<any> => {
   }
 }
 
+const listDeploymentLogs = async (req: Request, res: Response): Promise<any> => {
+  const userId = req.user?.sub
+
+  try {
+
+    const payload: ListDeploymentLogs = {
+      deploymentId: req.params.id,
+      userId: userId as string
+    }
+
+    const logs = await ProjectService.listDeploymentLogs(payload)
+
+    return res.status(200).json({
+      message: "Deployment logs listed successfully",
+      data: logs
+    })
+  } catch (error) {
+    return res.status(500).json({
+      status: "Error",
+      error: error?.message || "Something went wrong"
+    })
+  }
+}
+
+const deleteDeployment = async (req: Request, res: Response): Promise<any> => {
+  const userId = req.user?.sub
+
+  try {
+    const payload: DeleteDeployment = {
+      deploymentId: req.params.id,
+      userId: userId as string
+    }
+
+    await ProjectService.deleteDeployment(payload)
+
+    return res.status(200).json({
+      message: "Deployment deleted successfully",
+      data: null
+    })
+  } catch (error) {
+    return res.status(500).json({
+      status: "Error",
+      error: error?.message || "Something went wrong"
+    })
+  }
+}
+
 const ProjectController = {
   deployProject,
   createProject,
@@ -186,7 +233,9 @@ const ProjectController = {
   projectDetail,
   listProjectDeployments,
   updateSettings,
-  listSettings
+  listSettings,
+  listDeploymentLogs,
+  deleteDeployment
 }
 
 export default ProjectController

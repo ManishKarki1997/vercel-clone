@@ -1,8 +1,9 @@
-import { exec, spawn } from 'child_process'
+import { exec, spawn, spawnSync } from 'child_process'
 import path from 'path'
 import fs from "fs"
 import { fileURLToPath } from 'url';
 import type { TriggerLocalBuildPayload } from '../types/project.type'
+import { Config } from '../../../config/env';
 
 const __filename = fileURLToPath(import.meta.url);
 
@@ -17,6 +18,10 @@ const makeProjectEnv = async (payload: { envsFolderLocation: string; envContent:
   fs.writeFileSync(payload.projectEnvPath, payload.envContent);
 }
 
+const stopDocker = (dockerPath: string) => {
+  spawnSync("docker", ["compose", "down"], { cwd: dockerPath, stdio: "inherit" });
+};
+
 export const triggerLocalBuild = async (payload: TriggerLocalBuildPayload) => {
 
   // return
@@ -25,6 +30,10 @@ export const triggerLocalBuild = async (payload: TriggerLocalBuildPayload) => {
   const projectEnvPath = `${envsFolderLocation}/${payload.projectId}.env`
 
   await makeProjectEnv({ envsFolderLocation, envContent, projectEnvPath })
+
+  if (Config.NODE_ENV === "development") {
+    stopDocker(BUILD_SERVER_PATH);
+  }
 
   // Spawn a new process to run docker compose up with the env file
   const dockerProcess = spawn("docker", ["compose", "up", "--build", "-d"], {

@@ -1,6 +1,6 @@
 export type DeploymentLog = {
   log: string;
-  date: string;
+  timestamp: string;
   deploymentId: string;
   type?: string;
   isCompleted?: boolean,
@@ -16,5 +16,6 @@ export type Deployment = {
   id: string;
   name: string;
   projectId: string;
+  userId: string;
   status: "Started" | "Running" | "Completed" | "Failed";
 }

@@ -6,9 +6,13 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import EmptyState from '@/features/app/components/empty-state';
 import { NotebookIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useProjectDetail } from '../../providers/project-detail-provider';
+import { listDeploymentLogsAction } from '../../actions/project.action';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 type Props = {
   onClose: () => void
@@ -26,6 +30,15 @@ function DeploymentLogs({
   const { socket } = useSocket()
   const queryClient = useQueryClient();
   const [deploymentLogs, setDeploymentLogs] = React.useState<DeploymentLog[]>([])
+
+  const {
+    data: deploymentLogsData,
+    isLoading: isLoadingDeploymentLogs,
+  } = useQuery({
+    queryKey: ['deployment', "logs", { slug: deployment?.id }],
+    queryFn: () => listDeploymentLogsAction({ deploymentId: deployment.id, userId: project!.userId }),
+    enabled: !!deployment && !!project && deployment.status === 'Completed',
+  })
 
   React.useEffect(() => {
     if (!deployment) return;
@@ -58,19 +71,41 @@ function DeploymentLogs({
       socket.emit("unsubscribe", `logs:${deployment.projectId}`)
     }
 
-  }, [deployment, socket])
+  }, [deployment, project?.slug, queryClient, socket])
+
+  React.useEffect(() => {
+    if (deployment && deployment.status === "Completed" && deploymentLogsData) {
+      setDeploymentLogs(deploymentLogsData)
+    }
+  }, [deployment, deploymentLogsData])
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className='w-[75%] max-w-[1000px]'>
         <DialogHeader className='h-12'>
-          <DialogTitle>View Deployment Logs</DialogTitle>
+          <DialogTitle className='gap-2 flex items-center '>
+            <p>View Deployment Logs</p>
+            <Badge variant="secondary" className={cn("font-normal", deployment.status === "Completed" ? "bg-green-500" : "bg-blue-500")}>
+              {deployment.status}
+            </Badge>
+          </DialogTitle>
         </DialogHeader>
 
         <ScrollArea className=' h-[700px] '>
 
-          <div className="space-y-2">
+          <div className="space-y-0">
 
+
+            {
+              isLoadingDeploymentLogs && deployment.status === 'Completed' &&
+              <div className="space-y-2">
+                {
+                  Array.from(Array(10).keys()).map(idx => (
+                    <Skeleton key={idx} className='h-10 w-full rounded' />
+                  ))
+                }
+              </div>
+            }
 
             {
               !deploymentLogs.length &&
@@ -82,15 +117,27 @@ function DeploymentLogs({
 
               </EmptyState>
             }
+            <Table>
 
-            {
-              deploymentLogs.map((log, idx) => (
-                <div key={idx} className='flex items-start gap-4'>
-                  <p className='text-base text-muted-foreground font-mono'>{new Date(log.date).toLocaleString()}</p>
-                  <p className={cn(' text-base text-foreground font-medium', { 'text-red-500': log.type === "error", 'text-green-500': log.type === "success" })}>{log.log}</p>
-                </div>
-              ))
-            }
+              <TableHeader>
+                <TableRow>
+                  <TableHead >Timestamp</TableHead>
+                  <TableHead>Log</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+
+                {
+                  deploymentLogs.length > 0 &&
+                  deploymentLogs.map((log, idx) => (
+                    <TableRow key={idx}>
+                      <TableCell width={"250px"} className='text-base text-muted-foreground font-mono'>{new Date(log.timestamp).toLocaleString()}</TableCell>
+                      <TableCell className={cn(' text-base text-foreground font-medium', { 'text-red-500': log.type === "error", 'text-green-500': log.type === "success" })}>{log.log}</TableCell>
+                    </TableRow>
+                  ))
+                }
+              </TableBody>
+            </Table>
           </div>
         </ScrollArea>
       </DialogContent>

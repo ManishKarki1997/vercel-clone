@@ -1,10 +1,10 @@
 import { RunTaskCommand } from "@aws-sdk/client-ecs"
 import { Config } from "../../../config/env"
-import type { ProjectDeploymentMetadata, RunProjectPayload } from "../types/project.type"
+import type { ProjectDeploymentMetadata, RunProjectPayload, SaveDeploymentLogPayload } from "../types/project.type"
 import { ecsClient } from "../../../utils/aws"
-import type { AddProject, DeployProject, EditProject, ListProjectDeployments, ListProjects, ListProjectSettings, PatchDeployment, PatchProject, ProjectDetail, ProjectSetting } from "../schema/project.schema"
+import type { AddProject, DeleteDeployment, DeployProject, EditProject, ListDeploymentLogs, ListProjectDeployments, ListProjects, ListProjectSettings, PatchDeployment, PatchProject, ProjectDetail, ProjectSetting } from "../schema/project.schema"
 import { database } from "../../../db/drizzle"
-import { deployments, profiles, projectEnvVariables, projects } from "../../../db/schema"
+import { deploymentLogs, deployments, profiles, projectEnvVariables, projects } from "../../../db/schema"
 import { encodeObjectToEnvVariable, getDeploymentUrl, getRange } from "../../../utils/utils"
 import { and, count, desc, eq, inArray, or } from "drizzle-orm"
 import { slugify } from "../../../utils/slugify"
@@ -13,6 +13,7 @@ import { DEFAULT_PROJECT_SETTINGS } from "../constants/project-constants"
 import { buildDrizzleConflictUpdateColumns } from "../../../utils/database"
 import { triggerLocalBuild } from "../utils/trigger-deploy"
 import { sendDeploymentEvent } from "../../../db/socket"
+import { redis } from "../../../db/redis"
 
 const getRequiredDeploymentEnvVariables = () => {
   return [
@@ -216,9 +217,9 @@ const deployProject = async (payload: DeployProject) => {
           )
         )
 
-    // if (existingDeployment.length > 0) {
-    //   throw new ForbiddenError("Please cancel the previous deployment before redeploying")
-    // }
+    if (existingDeployment.length > 0) {
+      throw new ForbiddenError("Please cancel the previous deployment before redeploying")
+    }
 
 
 
@@ -232,7 +233,8 @@ const deployProject = async (payload: DeployProject) => {
         .values({
           projectId: project.id,
           status: "Running",
-          userId: payload.userId
+          userId: payload.userId,
+          deploymentUrl: getDeploymentUrl(project.slug)
         }).returning()
 
     envVariables.push({
@@ -559,6 +561,62 @@ const listSettings = async (payload: ListProjectSettings) => {
   }
 }
 
+const saveDeploymentLogs = async (deploymentId: string) => {
+  // console.log("to save logs ", payload)
+  const redisDeploymentLogs = await redis.lrange(`deployment_logs:${deploymentId}`, 0, -1)
+
+  if (!redisDeploymentLogs?.length) return;
+  const parsedLogs: SaveDeploymentLogPayload[] = redisDeploymentLogs
+    .map(log => JSON.parse(log))
+    .map(log => ({
+      ...log,
+      ...(log.metadata || {})
+    }))
+
+  const insertPayload = parsedLogs.map(log => ({
+    log: log.log,
+    timestamp: log.timestamp ? new Date(log.timestamp) : new Date(),
+    deploymentId: log.deploymentId,
+    type: log.type,
+    userId: log.userId,
+    projectId: log.projectId,
+  }))
+
+  // console.log('deploymentLogs', redisDeploymentLogs)
+  await database
+    .insert(deploymentLogs)
+    .values(insertPayload)
+}
+
+const listDeploymentLogs = async (payload: ListDeploymentLogs) => {
+  const logs =
+    await database
+      .select({
+        log: deploymentLogs.log,
+        timestamp: deploymentLogs.timestamp,
+      })
+      .from(deploymentLogs)
+      .where(
+        and(
+          eq(deploymentLogs.userId, payload.userId),
+          eq(deploymentLogs.deploymentId, payload.deploymentId),
+        )
+      )
+
+  return logs
+}
+
+const deleteDeployment = async (payload: DeleteDeployment) => {
+  await
+    database
+      .delete(deployments)
+      .where(
+        and(
+          eq(deployments.id, payload.deploymentId),
+          eq(deployments.userId, payload.userId)
+        )
+      )
+}
 
 const ProjectService = {
   deployProject,
@@ -569,7 +627,10 @@ const ProjectService = {
   listProjectDeployments,
   updateSettings,
   listSettings,
-  handleProjectDeployed
+  handleProjectDeployed,
+  saveDeploymentLogs,
+  listDeploymentLogs,
+  deleteDeployment
 }
 
 export default ProjectService

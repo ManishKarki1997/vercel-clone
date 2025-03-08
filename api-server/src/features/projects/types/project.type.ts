@@ -21,3 +21,10 @@ export type TriggerLocalBuildPayload = {
     value: string;
   }>
 }
+
+export type SaveDeploymentLogPayload = ProjectDeploymentMetadata & {
+  log: string;
+  type: string;
+  timestamp: string;
+  deploymentId: string;
+}

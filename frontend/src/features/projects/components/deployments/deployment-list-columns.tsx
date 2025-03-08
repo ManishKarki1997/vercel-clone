@@ -2,10 +2,10 @@ import moment from 'moment'
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { ColumnDef } from "@tanstack/react-table"
-import { CopyIcon, MoreHorizontal, NotebookIcon, RotateCcwIcon } from "lucide-react"
+import { CopyIcon, DeleteIcon, MoreHorizontal, NotebookIcon, RotateCcwIcon, TrashIcon } from "lucide-react"
 import { Deployment } from '../../types/deployment.types'
 
-export type DeploymentListColumnActionType = 'CopyDeploymentId' | 'ViewLogs' | 'Redeploy'
+export type DeploymentListColumnActionType = 'CopyDeploymentId' | 'ViewLogs' | 'Redeploy' | "Delete"
 
 type DeploymentListColumnsProps = {
   onAction: (action: DeploymentListColumnActionType, row: Deployment, extra?: any) => void;
@@ -83,6 +83,13 @@ export const useDeploymentListColumns = () => {
                 >
                   <NotebookIcon />
                   View Logs
+                </DropdownMenuItem>
+
+                <DropdownMenuItem
+                  onClick={() => onAction("Delete", deployment)}
+                >
+                  <TrashIcon />
+                  Delete
                 </DropdownMenuItem>
 
                 {/* <DropdownMenuSeparator />

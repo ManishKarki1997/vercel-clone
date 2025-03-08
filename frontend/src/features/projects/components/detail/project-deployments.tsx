@@ -13,14 +13,14 @@ import { getCoreRowModel, getPaginationRowModel, useReactTable } from '@tanstack
 import { usePagination } from '@/hooks/use-pagination'
 import DeploymentLogs from '../deployments/deployment-logs'
 import { Deployment } from '../../types/deployment.types'
+import DeleteDeploymentDialog from '../deployments/delete-deployment-dialog'
 
 
 function ProjectDeployments() {
 
   const [isDeploymentLogModalActive, setIsDeploymentLogModalActive] = React.useState(false)
-  const [selectedDeployment, setSelectedDeployment] = React.useState<Deployment | null>(null)
 
-  const { project } = useProjectDetail()
+  const { project, isDeleteDeploymentModalOpen, selectedDeployment, setSelectedDeployment, onDeleteDeployment } = useProjectDetail()
 
   const queryClient = useQueryClient()
   const { DeploymentListColumns } = useDeploymentListColumns()
@@ -46,6 +46,7 @@ function ProjectDeployments() {
     setSelectedDeployment(null)
   }
 
+
   const onColumnAction = React.useCallback((action: DeploymentListColumnActionType, deployment: Deployment, extra: any) => {
     if (action === "CopyDeploymentId") {
       navigator.clipboard.writeText(deployment.deploymentUrl)
@@ -55,9 +56,10 @@ function ProjectDeployments() {
     } else if (action === "ViewLogs") {
       setIsDeploymentLogModalActive(true)
       setSelectedDeployment(deployment)
-      // do nothing
+    } else if (action === "Delete") {
+      onDeleteDeployment(deployment)
     }
-  }, [])
+  }, [onDeleteDeployment, setSelectedDeployment])
 
   const table = useReactTable({
     data: deployments,
@@ -133,6 +135,12 @@ function ProjectDeployments() {
           onClose={onCloseDeploymentLogsModal}
           deployment={selectedDeployment}
         />
+      }
+
+      {
+        isDeleteDeploymentModalOpen &&
+        selectedDeployment &&
+        <DeleteDeploymentDialog />
       }
     </div>
   )

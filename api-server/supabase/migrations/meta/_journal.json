@@ -85,6 +85,20 @@
       "when": 1741189752818,
       "tag": "0011_loud_blue_marvel",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1741427278421,
+      "tag": "0012_tired_blizzard",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1741427439114,
+      "tag": "0013_heavy_mastermind",
+      "breakpoints": true
     }
   ]
 }

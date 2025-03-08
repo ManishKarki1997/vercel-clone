@@ -70,3 +70,21 @@ export const projectEnvVariables = pgTable("project_env_variables", {
     uniqueProjectVar: t.unique().on(table.projectId, table.name),
   };
 });
+
+export const deploymentLogs = pgTable("deployment_logs", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  projectId: uuid("project_id")
+    .notNull()
+    .references(() => projects.id, { onDelete: "cascade" }),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => profiles.id, { onDelete: "cascade" }),
+  log: varchar("name",).notNull(),
+  timestamp: timestamp("timestamp"),
+  deploymentId: uuid("deployment_id")
+    .notNull()
+    .references(() => deployments.id, { onDelete: "cascade" }),
+},
+  (table) => [
+    t.index("user_deployment_id_idx").on(table.userId, table.deploymentId),
+  ]);

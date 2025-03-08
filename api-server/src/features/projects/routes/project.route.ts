@@ -15,4 +15,7 @@ ProjectRouter.get("/:slug", auth, ProjectController.projectDetail)
 ProjectRouter.get("/:slug/deployments", auth, ProjectController.listProjectDeployments)
 ProjectRouter.post("/:slug/deploy", auth, ProjectController.deployProject)
 
+ProjectRouter.get("/deployments/:id/logs", auth, ProjectController.listDeploymentLogs)
+ProjectRouter.delete("/deployments/:id", auth, ProjectController.deleteDeployment)
+
 export default ProjectRouter;
