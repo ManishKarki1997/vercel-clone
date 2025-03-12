@@ -27,9 +27,17 @@ export class LocalProjectDeployService extends EventEmitter {
     fs.writeFileSync(payload.projectEnvPath, payload.envContent);
   }
 
-  async stopDocker(dockerPath: string) {
-    console.log('Stopping docker at ', dockerPath)
-    spawnSync("docker", ["compose", "down", "--volumes"], { cwd: dockerPath, stdio: "inherit" });
+  async stopDocker({ dockerPath, projectId }: { dockerPath: string, projectId: string }) {
+    spawnSync("docker", ["compose", "down", "--volumes"],
+      {
+        cwd: dockerPath,
+        stdio: "inherit",
+        env: {
+          PROJECT_ID: projectId,
+          COMPOSE_PROJECT_NAME: projectId,
+        },
+      }
+    );
   };
 
   async triggerLocalBuild(payload: TriggerLocalBuildPayload) {
@@ -41,7 +49,7 @@ export class LocalProjectDeployService extends EventEmitter {
       await this.makeProjectEnv({ envsFolderLocation, envContent, projectEnvPath })
 
       if (Config.NODE_ENV === "development") {
-        this.stopDocker(this.BUILD_SERVER_PATH);
+        this.stopDocker({ dockerPath: this.BUILD_SERVER_PATH, projectId: payload.projectId });
       }
 
 
@@ -49,7 +57,8 @@ export class LocalProjectDeployService extends EventEmitter {
       // Spawn a new process to run docker compose up with the env file
       const dockerProcess = spawn("docker", ["compose", "up", "--build", "-d"], {
         env: {
-          PROJECT_ID: payload.projectId
+          PROJECT_ID: payload.projectId,
+          COMPOSE_PROJECT_NAME: payload.projectId,
         },
         cwd: this.BUILD_SERVER_PATH, // Change working directory to the project folder
         stdio: "inherit", // Pipe output to console
@@ -77,7 +86,7 @@ export class LocalProjectDeployService extends EventEmitter {
       });
 
     } catch (error) {
-      this.stopDocker(this.BUILD_SERVER_PATH);
+      this.stopDocker({ dockerPath: this.BUILD_SERVER_PATH, projectId: payload.projectId });
       this.emit("error", error)
     }
 

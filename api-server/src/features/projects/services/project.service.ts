@@ -148,7 +148,6 @@ const updateProjectDeployment = async (payload: PatchDeployment) => {
 
 
 const patchProject = async (payload: PatchProject) => {
-  console.log("patchProject", payload)
 
   await
     database

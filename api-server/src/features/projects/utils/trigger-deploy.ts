@@ -39,7 +39,8 @@ export const triggerLocalBuild = async (payload: TriggerLocalBuildPayload) => {
     // Spawn a new process to run docker compose up with the env file
     const dockerProcess = spawn("docker", ["compose", "up", "--build", "-d"], {
       env: {
-        PROJECT_ID: payload.projectId
+        PROJECT_ID: payload.projectId,
+        COMPOSE_PROJECT_NAME: payload.projectId,
       },
       cwd: BUILD_SERVER_PATH, // Change working directory to the project folder
       stdio: "inherit", // Pipe output to console

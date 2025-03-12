@@ -6,7 +6,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile 
-    container_name: my-app
+    container_name: ${PROJECT_ID}_app
     volumes:
       - appdata:/home/app      
     # depends_on:
