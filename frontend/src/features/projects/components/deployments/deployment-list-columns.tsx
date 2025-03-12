@@ -4,6 +4,8 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { ColumnDef } from "@tanstack/react-table"
 import { CopyIcon, DeleteIcon, MoreHorizontal, NotebookIcon, RotateCcwIcon, TrashIcon } from "lucide-react"
 import { Deployment } from '../../types/deployment.types'
+import { Badge } from '@/components/ui/badge'
+import { cn } from '@/lib/utils'
 
 export type DeploymentListColumnActionType = 'CopyDeploymentId' | 'ViewLogs' | 'Redeploy' | "Delete"
 
@@ -45,6 +47,11 @@ export const useDeploymentListColumns = () => {
       {
         accessorKey: "status",
         header: "Status",
+        cell: ({ row }) => (
+          <div>
+            <Badge className={cn('bg-muted-foreground', { "bg-red-500": row.original.status === 'Failed' })}>{row.original.status}</Badge>
+          </div>
+        )
       },
       {
         accessorKey: "deploymentUrl",

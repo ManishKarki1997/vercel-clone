@@ -23,7 +23,7 @@ const decodeStringifiedEnv = (stringified) =>
   stringified
   .split(',')
   .reduce((obj, pair) => {
-    const [key, value] = pair.split(':');
+    const [key, value] = pair.split('==');
     obj[key] = value; // Convert value to proper type if necessary (e.g., parse integers, booleans)
     return obj;
   }, {});
@@ -57,6 +57,8 @@ const makeBuildPathIfNotExist = (outputPath) => {
 }
 
 async function init() {
+  await waitFor(1000)
+  
   const outputPath = path.join(__dirname, "builds", PROJECT_ID);
   makeBuildPathIfNotExist(outputPath)
   
@@ -66,6 +68,8 @@ async function init() {
     log: "Running install and build commands", 
     type:"info"
   })
+ 
+  
   
   const p = exec(`cd ${outputPath} &&  npm install --legacy-peer-deps --include=optional && npm run build`);
 
@@ -88,6 +92,7 @@ async function init() {
     })
     
     console.log("Error", error);
+    process.exit(1)
   });
 
   p.on("close", async () => {    

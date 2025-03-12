@@ -24,35 +24,40 @@ const stopDocker = (dockerPath: string) => {
 
 export const triggerLocalBuild = async (payload: TriggerLocalBuildPayload) => {
 
-  // return
-  const envContent = payload.environmentVariables.map(({ name, value }) => `${name}=${value}`).join("\n");
-  const envsFolderLocation = path.join(`${BUILD_SERVER_PATH}/envs`)
-  const projectEnvPath = `${envsFolderLocation}/${payload.projectId}.env`
+  return new Promise(async (resolve, reject) => {
 
-  await makeProjectEnv({ envsFolderLocation, envContent, projectEnvPath })
+    const envContent = payload.environmentVariables.map(({ name, value }) => `${name}=${value}`).join("\n");
+    const envsFolderLocation = path.join(`${BUILD_SERVER_PATH}/envs`)
+    const projectEnvPath = `${envsFolderLocation}/${payload.projectId}.env`
 
-  if (Config.NODE_ENV === "development") {
-    stopDocker(BUILD_SERVER_PATH);
-  }
+    await makeProjectEnv({ envsFolderLocation, envContent, projectEnvPath })
 
-  // Spawn a new process to run docker compose up with the env file
-  const dockerProcess = spawn("docker", ["compose", "up", "--build", "-d"], {
-    env: {
-      PROJECT_ID: payload.projectId
-    },
-    cwd: BUILD_SERVER_PATH, // Change working directory to the project folder
-    stdio: "inherit", // Pipe output to console
-  });
+    if (Config.NODE_ENV === "development") {
+      stopDocker(BUILD_SERVER_PATH);
+    }
 
-  // const command = ` cd "${BUILD_SERVER_PATH}" && docker compose up --build} `
-  // console.log("dirname", path.dirname(__filename), BUILD_SERVER_PATH, command)
-  // const process = exec(command);
+    // Spawn a new process to run docker compose up with the env file
+    const dockerProcess = spawn("docker", ["compose", "up", "--build", "-d"], {
+      env: {
+        PROJECT_ID: payload.projectId
+      },
+      cwd: BUILD_SERVER_PATH, // Change working directory to the project folder
+      stdio: "inherit", // Pipe output to console
+    });
 
-  // dockerProcess.on("data", (data) => console.log(data.toString()));
-  // dockerProcess.on("error", (err) => console.log(err.toString()));
 
-  // dockerProcess.on("exit", (code) => {
-  //   console.log(`Process exited with code ${code}`);
-  // });
+
+    // const command = ` cd "${BUILD_SERVER_PATH}" && docker compose up --build} `
+    // console.log("dirname", path.dirname(__filename), BUILD_SERVER_PATH, command)
+    // const process = exec(command);
+
+    // dockerProcess.on("data", (data) => console.log(data.toString()));
+    // dockerProcess.on("error", (err) => console.log(err.toString()));
+
+    dockerProcess.on("exit", (code) => {
+      resolve(null)
+      console.log(`Process exited with code ${code}`);
+    });
+  })
 
 }

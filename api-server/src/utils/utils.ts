@@ -13,15 +13,14 @@ export const getDeploymentUrl = (slug: string) => {
   const protocol = isDevelopment ? "http" : "https"
   const host = Config.PROXY_SERVER
   const url = `${protocol}://${slug}.${host}`
-
   return url
 
 }
 
 export const encodeObjectToEnvVariable = (object: Record<string, string>) => {
   const stringified = Object.entries(object)
-    .map(([key, value]) => `${key}:${value}`)
+    .map(([key, value]) => `${key}==${value}`)
     .join(',');
-
+  console.log("stringified metadata", stringified)
   return stringified
 }

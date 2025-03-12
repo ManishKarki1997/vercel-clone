@@ -10,12 +10,25 @@ export const sendDeploymentEvent = ({ channelId, log }: { channelId: string; log
   io.to(channelId).emit("log", log)
 }
 
+export const sendRefreshDeploymentsTableEvent = ({ channelId }: { channelId: string; }) => {
+  if (!io) return;
+  io.to(channelId).emit("refresh_deployments_table", { channelId })
+}
+
 const handleSocketEvents = () => {
   if (!io) return;
 
 
   io.on("connection", socket => {
-    console.log("New socket connection ", socket.id)
+    // console.log("New socket connection ", socket.id)
+
+    socket.on("join_deployments_list", (projectId: string) => {
+      socket.join(projectId)
+    })
+
+    socket.on("leave_deployments_list", (projectId: string) => {
+      socket.leave(projectId)
+    })
 
     socket.on("subscribe", (deploymentId: string) => {
       // console.log(`Subscribed to ${deploymentId}`)

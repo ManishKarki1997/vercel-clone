@@ -35,7 +35,7 @@ export function LoginForm({
       queryClient.invalidateQueries({ queryKey: ['profile'] })
 
       // TODO redirect to /app when the /app dashboard page is done
-      navigate('/app/projects')
+      navigate('/app')
     },
     onError: (err: AxiosError) => {
       toast.error(err?.response?.data?.message || "Something went wrong while logging in")

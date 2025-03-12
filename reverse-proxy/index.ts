@@ -2,6 +2,7 @@ import express, { type Request, type Response } from "express";
 import dotenv from "dotenv";
 import httpProxy from 'http-proxy'
 import axios from 'axios'
+import { errorHandler } from "./middlewares/error-handler";
 
 dotenv.config();
 
@@ -24,25 +25,31 @@ app.get("/not-found", (req: Request, res: Response) => {
 });
 
 app.use(async (req, res, next) => {
-  if (!AWS_BUCKET_PATH) {
-    next()
-    return
+  try {
+    if (!AWS_BUCKET_PATH) {
+      next()
+      return
+    }
+
+    const hostname = req.hostname || "";
+
+    const subdomain = !hostname ? "" : hostname.split('.')[0];
+
+    const projectId = await getProjectIdBySlug(subdomain)
+    console.log("projectId", projectId)
+    if (!projectId) {
+      return res.send("Project not found")
+    }
+
+
+    const resolvePath = `${AWS_BUCKET_PATH}/${projectId}`
+
+
+    return proxy.web(req, res, { target: resolvePath, changeOrigin: true })
+  } catch (error) {
+    console.error("Error getting project details", error)
+    return res.send("Not found")
   }
-
-  const hostname = req.hostname || "";
-
-  const subdomain = !hostname ? "" : hostname.split('.')[0];
-
-  const projectId = await getProjectIdBySlug(subdomain)
-  if (!projectId) {
-    return res.send("Project not found")
-  }
-
-
-  const resolvePath = `${AWS_BUCKET_PATH}/${projectId}`
-
-
-  return proxy.web(req, res, { target: resolvePath, changeOrigin: true })
 
 })
 
@@ -61,6 +68,8 @@ app.get("/", (req: Request, res: Response) => {
   res.send("Welcome to the proxy server");
 });
 
+
+app.use(errorHandler)
 app.listen(port, () => {
   console.log(`[reverse-proxy]: Reverse proxy is running on port ${port}`);
 });

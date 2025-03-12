@@ -5,7 +5,7 @@ dotenv.config();
 export const Config = {
   isDebugMode: false,
   PORT: process.env.PORT || 3000,
-  SOCKET_SERVER_PORT: process.env.SOCKET_SERVER_PORT ? Number(process.env.SOCKET_SERVER_PORT) : 3002,
+  SOCKET_SERVER_PORT: process.env.SOCKET_SERVER_PORT ? Number(process.env.SOCKET_SERVER_PORT) : 9004,
   NODE_ENV: process.env.NODE_ENV,
   FRONTEND_URLS: process.env.FRONTEND_URLS!.split(","),
   PROXY_SERVER: process.env.PROXY_SERVER || `localhost:9001`,

@@ -1,6 +1,6 @@
 import Redis from 'ioredis'
 import { Config } from '../config/env'
-import { sendDeploymentEvent } from './socket'
+import { sendDeploymentEvent, sendRefreshDeploymentsTableEvent } from './socket'
 import type { ProjectDeploymentMetadata } from '../features/projects/types/project.type'
 import ProjectService from '../features/projects/services/project.service'
 
@@ -36,6 +36,7 @@ export const initSubscribeToLogs = () => {
       await ProjectService.handleProjectDeployed({ ...metadata, error: parsedLog?.hasError })
       await ProjectService.saveDeploymentLogs(deploymentId)
       await redis.del(`deployment_logs:${deploymentId}`);
+      sendRefreshDeploymentsTableEvent({ channelId: metadata?.projectId })
     }
     sendDeploymentEvent({ channelId: channel, log: message })
 

@@ -28,7 +28,7 @@ function ProjectBasicInfo() {
 
         <div className='col-span-12'>
           <p className='text-sm text-muted-foreground'>URL</p>
-          <a href='https://project.example.com' className='font-medium'>{`http://${project.slug}.localhost:3001`}</a>
+          <a href='https://project.example.com' className='font-medium'>{project.deploymentUrl || "-"}</a>
         </div>
 
 

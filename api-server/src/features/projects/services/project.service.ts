@@ -14,6 +14,7 @@ import { buildDrizzleConflictUpdateColumns } from "../../../utils/database"
 import { triggerLocalBuild } from "../utils/trigger-deploy"
 import { sendDeploymentEvent } from "../../../db/socket"
 import { redis } from "../../../db/redis"
+import { LocalProjectDeployService } from "./local-deploy-service"
 
 const getRequiredDeploymentEnvVariables = () => {
   return [
@@ -145,7 +146,10 @@ const updateProjectDeployment = async (payload: PatchDeployment) => {
       )
 }
 
+
 const patchProject = async (payload: PatchProject) => {
+  console.log("patchProject", payload)
+
   await
     database
       .update(projects)
@@ -171,13 +175,13 @@ const handleProjectDeployed = async (payload: ProjectDeploymentMetadata) => {
     id: payload.deploymentId,
     status: payload.error ? "Failed" : "Completed",
     userId: payload.userId,
-    completedAt: new Date(),
+    completedAt: payload.error ? undefined : new Date(),
   })
 }
 
 const deployProject = async (payload: DeployProject) => {
+  try {
 
-  await database.transaction(async (tx) => {
 
     // create deployment
     const project = await
@@ -252,7 +256,7 @@ const deployProject = async (payload: DeployProject) => {
     // return;
 
     const [deployment] = await
-      tx
+      database
         .insert(deployments)
         .values({
           projectId: project.id,
@@ -273,7 +277,7 @@ const deployProject = async (payload: DeployProject) => {
     })
 
     const containerOverridesEnvs = [...getRequiredDeploymentEnvVariables(), ...envVariables]
-    console.log("containerOverridesEnvs", containerOverridesEnvs)
+    // console.log("containerOverridesEnvs", containerOverridesEnvs)
 
 
     const runProjectPayload = {
@@ -306,13 +310,8 @@ const deployProject = async (payload: DeployProject) => {
     // })
 
     // await ecsClient.send(command)
-    await triggerLocalBuild({
-      userId: payload.userId,
-      projectId: project.id,
-      environmentVariables: containerOverridesEnvs
-    })
 
-    const deploymentUrl = getDeploymentUrl(runProjectPayload.projectId)
+    const deploymentUrl = deployment.deploymentUrl!
 
     await updateProjectDeployment({
       id: deployment.id,
@@ -321,13 +320,42 @@ const deployProject = async (payload: DeployProject) => {
       deploymentUrl,
     })
 
-    await patchProject({
-      slug: payload.slug,
-      userId: payload.userId,
-      deploymentUrl
-    })
-  })
+    const localDeployService = new LocalProjectDeployService();
 
+    localDeployService.triggerLocalBuild({
+      userId: payload.userId,
+      projectId: project.id,
+      environmentVariables: containerOverridesEnvs
+    })
+
+    localDeployService.on("exit", async () => {
+      await patchProject({
+        slug: payload.slug,
+        userId: payload.userId,
+        deploymentUrl
+      })
+    })
+
+    localDeployService.on("error", async (error) => {
+      console.error("error deploying project", error)
+      await updateProjectDeployment({
+        id: deployment.id,
+        status: "Failed",
+        userId: payload.userId,
+        deploymentUrl,
+      })
+    })
+
+    // await triggerLocalBuild({
+    // })
+
+
+
+
+
+  } catch (error) {
+    console.error("Error deploying project", error)
+  }
 }
 
 const createProject = async (payload: AddProject) => {
@@ -400,6 +428,7 @@ const updateProject = async (payload: EditProject) => {
 }
 
 const listProjects = async (payload: ListProjects) => {
+
   const projectList = await database
     .select({
       name: projects.name,
@@ -436,6 +465,7 @@ const getProjectDetail = async (payload: ProjectDetail) => {
         name: projects.name,
         slug: projects.slug,
         gitUrl: projects.gitUrl,
+        deploymentUrl: projects.deploymentUrl,
         description: projects.description,
         status: projects.status,
         createdAt: projects.createdAt,
@@ -591,29 +621,33 @@ const listSettings = async (payload: ListProjectSettings) => {
 
 const saveDeploymentLogs = async (deploymentId: string) => {
   // console.log("to save logs ", payload)
-  const redisDeploymentLogs = await redis.lrange(`deployment_logs:${deploymentId}`, 0, -1)
+  try {
+    const redisDeploymentLogs = await redis.lrange(`deployment_logs:${deploymentId}`, 0, -1)
 
-  if (!redisDeploymentLogs?.length) return;
-  const parsedLogs: SaveDeploymentLogPayload[] = redisDeploymentLogs
-    .map(log => JSON.parse(log))
-    .map(log => ({
-      ...log,
-      ...(log.metadata || {})
+    if (!redisDeploymentLogs?.length) return;
+    const parsedLogs: SaveDeploymentLogPayload[] = redisDeploymentLogs
+      .map(log => JSON.parse(log))
+      .map(log => ({
+        ...log,
+        ...(log.metadata || {})
+      }))
+    // console.log("parsedLogs", parsedLogs)
+    const insertPayload = parsedLogs.map(log => ({
+      log: log.log,
+      timestamp: log.date ? new Date(log.date) : new Date(),
+      deploymentId: log.deploymentId,
+      type: log.type,
+      userId: log.userId,
+      projectId: log.projectId,
     }))
 
-  const insertPayload = parsedLogs.map(log => ({
-    log: log.log,
-    timestamp: log.date ? new Date(log.date) : new Date(),
-    deploymentId: log.deploymentId,
-    type: log.type,
-    userId: log.userId,
-    projectId: log.projectId,
-  }))
-
-  // console.log('deploymentLogs', redisDeploymentLogs)
-  await database
-    .insert(deploymentLogs)
-    .values(insertPayload)
+    // console.log('deploymentLogs', redisDeploymentLogs)
+    await database
+      .insert(deploymentLogs)
+      .values(insertPayload)
+  } catch (error) {
+    console.error("Error saving deployment logs", error)
+  }
 }
 
 const listDeploymentLogs = async (payload: ListDeploymentLogs) => {

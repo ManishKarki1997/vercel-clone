@@ -5,6 +5,7 @@ export type Project = {
   name: string;
   slug: string;
   gitUrl: string;
+  deploymentUrl: string;
   description: string;
   createdAt: Date;
   updatedAt: Date;

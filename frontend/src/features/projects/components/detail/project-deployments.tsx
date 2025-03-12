@@ -14,6 +14,7 @@ import { usePagination } from '@/hooks/use-pagination'
 import DeploymentLogs from '../deployments/deployment-logs'
 import { Deployment } from '../../types/deployment.types'
 import DeleteDeploymentDialog from '../deployments/delete-deployment-dialog'
+import { useSocket } from '@/hooks/use-socket'
 
 
 function ProjectDeployments() {
@@ -22,12 +23,14 @@ function ProjectDeployments() {
 
   const { project, isDeleteDeploymentModalOpen, selectedDeployment, setSelectedDeployment, onDeleteDeployment } = useProjectDetail()
 
+  const { socket } = useSocket()
   const queryClient = useQueryClient()
   const { DeploymentListColumns } = useDeploymentListColumns()
   const { onPaginationChange, pagination } = usePagination();
 
   const {
-    data: deploymentsListData
+    data: deploymentsListData,
+    refetch: refetchDeployments
   } = useQuery({
     queryKey: ['deployment', { slug: project?.slug, page: pagination.pageIndex + 1, limit: pagination.pageSize }],
     queryFn: () => listProjectDeploymentsAction({
@@ -95,6 +98,28 @@ function ProjectDeployments() {
 
     mutation.mutate({ slug: project.slug })
   }
+
+
+  React.useEffect(() => {
+
+    if (!socket) return;
+
+    if (project) {
+      socket.emit("join_deployments_list", project?.id)
+    }
+
+    socket.on("refresh_deployments_table", () => {
+      console.log("received refresh_deployments_table event")
+      refetchDeployments()
+    })
+
+
+    return () => {
+      socket.off("log")
+      socket.emit("leave_deployments_list", project?.id)
+    }
+
+  }, [project, refetchDeployments, socket])
 
   return (
     <div>

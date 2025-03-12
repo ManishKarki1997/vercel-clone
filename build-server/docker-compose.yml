@@ -9,28 +9,28 @@ services:
     container_name: my-app
     volumes:
       - appdata:/home/app      
-    depends_on:
-      - redis  # Ensure Redis is up before the app starts
+    # depends_on:
+      # - redis  # Ensure Redis is up before the app starts
     # command: [ "bash", "-c", "ls" ]
     command: [ "bash", "-c", "/home/app/main.sh" ]
     env_file:
       - .env
       - ./envs/${PROJECT_ID}.env
-    networks:
-      - redis-network
+    # networks:
+    #   - redis-network
 
   # Redis service
-  redis:
-    image: redis:latest
-    container_name: redis
-    ports:
-      - "6380:6379"  # Redis default port
-    networks:
-      - redis-network
+  # redis:
+  #   image: redis:latest
+  #   container_name: redis
+  #   ports:
+  #     - "6380:6379"  # Redis default port
+  #   networks:
+  #     - redis-network
 
-networks:
-  redis-network:
-    driver: bridge
+# networks:
+#   redis-network:
+#     driver: bridge
     
 volumes:
   appdata:
