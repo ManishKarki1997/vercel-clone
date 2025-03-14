@@ -13,11 +13,12 @@ const deployProject = async (req: Request, res: Response): Promise<any> => {
     const slug = generateSlug()
     const finalSlug = req.body?.slug ? req.body.slug : slug
 
-    await ProjectService.deployProject({ ...req.body, projectId: finalSlug, userId })
+    const data = await ProjectService.deployProject({ ...req.body, projectId: finalSlug, userId })
 
     return res.status(200).json({
       status: "Queued",
-      url: `http://${finalSlug}.${Config.PROXY_SERVER}`
+      url: `http://${finalSlug}.${Config.PROXY_SERVER}`,
+      data
     })
   } catch (error) {
     return res.status(500).json({

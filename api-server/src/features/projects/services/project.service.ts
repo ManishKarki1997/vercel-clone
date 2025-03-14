@@ -345,12 +345,10 @@ const deployProject = async (payload: DeployProject) => {
       })
     })
 
-    // await triggerLocalBuild({
-    // })
 
 
 
-
+    return deployment
 
   } catch (error) {
     console.error("Error deploying project", error)

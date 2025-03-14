@@ -83,9 +83,16 @@ function ProjectDeployments() {
 
   const mutation = useMutation({
     mutationFn: deployProjectAction,
-    onSuccess: () => {
+    onSuccess: (data) => {
       toast.success("Queued for deployment successfully", { id: "deploy-project" })
       queryClient.invalidateQueries({ queryKey: ['deployment', { slug: project?.slug }] })
+      const deployment = data?.data?.data
+      console.log("deployment", deployment)
+      if (deployment) {
+        setSelectedDeployment(deployment)
+        setIsDeploymentLogModalActive(true)
+      }
+
     },
     onError: (err: AxiosError) => {
       toast.error(err?.response?.data?.error || "Something went wrong while deploying project", { id: "deploy-project" })
@@ -109,7 +116,6 @@ function ProjectDeployments() {
     }
 
     socket.on("refresh_deployments_table", () => {
-      console.log("received refresh_deployments_table event")
       refetchDeployments()
     })
 

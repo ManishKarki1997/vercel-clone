@@ -16,6 +16,7 @@ export default defineConfig({
     port: process.env.VITE_APP_SERVER_PORT ? Number(process.env.VITE_APP_SERVER_PORT) : 5173,
   },
   preview: {
+    allowedHosts: ['vercel.manishkarki.com'],
     host: '0.0.0.0',
     port: 8999
   }

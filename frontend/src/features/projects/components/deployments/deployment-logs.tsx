@@ -41,6 +41,7 @@ function DeploymentLogs({
   })
 
   React.useEffect(() => {
+    console.log("deployment socket", { deployment, socket: socket?.id })
     if (!deployment) return;
 
     if (!socket) return;
