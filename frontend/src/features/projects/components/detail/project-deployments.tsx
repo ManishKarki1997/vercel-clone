@@ -87,7 +87,6 @@ function ProjectDeployments() {
       toast.success("Queued for deployment successfully", { id: "deploy-project" })
       queryClient.invalidateQueries({ queryKey: ['deployment', { slug: project?.slug }] })
       const deployment = data?.data?.data
-      console.log("deployment", deployment)
       if (deployment) {
         setSelectedDeployment(deployment)
         setIsDeploymentLogModalActive(true)
