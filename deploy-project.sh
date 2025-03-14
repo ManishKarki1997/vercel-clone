@@ -17,7 +17,7 @@ git pull
  cd $FRONTEND_DIR || exit
  npm run build
 
- cp dist ../api-server/dist
+ cp -r dist ../api-server/dist
 
  cd $BUILD_DIR || exit
  chmod +x ./main.sh
