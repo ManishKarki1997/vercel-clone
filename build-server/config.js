@@ -16,7 +16,8 @@ const Config = {
   REDIS_PASSWORD: process.env.REDIS_PASSWORD || "",
   REDIS_SERVICE_URI: process.env.REDIS_SERVICE_URI || "",
 
-  PROJECT_METADATA: process.env.PROJECT_METADATA
+  PROJECT_METADATA: process.env.PROJECT_METADATA,
+  PROJECT_OUTPUT_FOLDER: process.env.PROJECT_OUTPUT_FOLDER || "dist",
 }
 
 module.exports = {Config}

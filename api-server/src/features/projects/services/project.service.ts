@@ -134,6 +134,8 @@ const upsertDefaultProjectEnvVariables = async (payload: { projectId: string, us
 }
 
 const updateProjectDeployment = async (payload: PatchDeployment) => {
+  if (Object.keys(payload).length === 0) return
+
   await
     database
       .update(deployments)
@@ -148,6 +150,7 @@ const updateProjectDeployment = async (payload: PatchDeployment) => {
 
 
 const patchProject = async (payload: PatchProject) => {
+  if (Object.keys(payload).length === 0) return
 
   await
     database

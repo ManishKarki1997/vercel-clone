@@ -33,6 +33,7 @@ const publisher = new Redis({
 }
 
 module.exports = {
-  publishLog
+  publishLog,
+  publisher
 }
 

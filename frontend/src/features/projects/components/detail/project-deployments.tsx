@@ -140,7 +140,7 @@ function ProjectDeployments() {
           onClick={deployProject}
         >
           <PlayIcon />
-          Redeploy Latest
+          Deploy
         </Button>
       </div>
 

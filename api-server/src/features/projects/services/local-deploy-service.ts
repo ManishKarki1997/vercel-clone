@@ -42,7 +42,7 @@ export class LocalProjectDeployService extends EventEmitter {
 
   async triggerLocalBuild(payload: TriggerLocalBuildPayload) {
     try {
-      const envContent = payload.environmentVariables.map(({ name, value }) => `${name}=${value}`).join("\n");
+      const envContent = [...payload.environmentVariables, { name: 'VITE_BASE_URL', value: `__outputs/${payload.projectId}` }].map(({ name, value }) => `${name}=${value}`).join("\n");
       const envsFolderLocation = path.join(`${this.BUILD_SERVER_PATH}/envs`)
       const projectEnvPath = `${envsFolderLocation}/${payload.projectId}.env`
 

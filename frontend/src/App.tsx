@@ -99,7 +99,7 @@ function App() {
           <BrowserRouter>
 
             <QueryClientProvider client={queryClient}>
-              <Toaster position="top-center" />
+              <Toaster position="top-right" />
               <AuthProvider>
                 <AppContent />
               </AuthProvider>

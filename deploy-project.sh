@@ -19,13 +19,18 @@ git pull
 
  cp -r dist ../api-server/dist
 
+# going to the root directory
+cd ../
+
  cd $BUILD_DIR || exit
  chmod +x ./main.sh
+
 
 # going to the root directory
 cd ../
 
 echo "Running pm2"
 pm2 start ecosystem.prod.config.js 
+pm2 save
 
 echo "Deployed Successfully"

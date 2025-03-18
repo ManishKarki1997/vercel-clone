@@ -19,6 +19,7 @@ const redisConfig = {
 }
 
 const subscriber = new Redis(redisConfig)
+export const publisher = new Redis(redisConfig)
 
 export const redis = new Redis(redisConfig)
 

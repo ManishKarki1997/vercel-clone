@@ -6,7 +6,7 @@ const dotenv = require("dotenv");
 const mime = require('mime-types')
 const Redis = require("ioredis");
 const { Config } = require('./config');
-const { publishLog } = require('./redis');
+const { publishLog, publisher } = require('./redis');
 
 
 dotenv.config();
@@ -29,8 +29,9 @@ const decodeStringifiedEnv = (stringified) =>
   }, {});
 
 
-const PROJECT_ID = Config.PROJECT_ID;
+let PROJECT_ID = Config.PROJECT_ID;
 const PROJECT_SLUG = Config.PROJECT_SLUG;
+const PROJECT_OUTPUT_FOLDER = Config.PROJECT_OUTPUT_FOLDER;
 const METADATA = Config.PROJECT_METADATA ? decodeStringifiedEnv(Config.PROJECT_METADATA) : {};
 
 
@@ -56,7 +57,65 @@ const makeBuildPathIfNotExist = (outputPath) => {
   }
 }
 
-async function init() {
+function updateViteConfig({viteConfigPaths}){
+
+  for(const viteConfigPath of viteConfigPaths){
+
+    if(!fs.existsSync(viteConfigPath)){
+      console.log(`${viteConfigPath} doesn't exist`)
+      continue
+    }
+    
+    // Read the original config
+    const originalConfig = fs.readFileSync(viteConfigPath, 'utf8');
+    
+    // Save backup
+fs.writeFileSync(`${viteConfigPath}.backup`, originalConfig);
+
+// Modify the config
+let newConfig = originalConfig;
+if (newConfig.includes('base:')) {
+  // Replace any line containing "base:" with a line that sets base to empty string
+  newConfig = newConfig.replace(/^.*base:.*$/m, `  base: '',`);
+} else {
+  // If base is not defined, add it
+  newConfig = newConfig.replace(/defineConfig\(\{/g, `defineConfig({\n  base: '',`);
+}
+
+// Write the modified config
+fs.writeFileSync(viteConfigPath, newConfig);
+
+console.log(`Modified ${viteConfigPath} to use relative paths`);
+}
+
+}
+
+
+function replaceAssetPaths({htmlPath,projectId}) {
+
+let html = fs.readFileSync(htmlPath, 'utf8');
+
+
+// Replace any path ending with /assets/filename.ext with ./assets/filename.ext
+html = html.replace(/(src|href)=("|')(?:.*?)\/assets\/([^"']+)("|')/g, `$1=$2./assets/$3$4`);
+
+// Handle root-level files too - convert to ./assets/filename.ext
+html = html.replace(/(src|href)=("|')\/(?!assets\/)([^"'\/]+\.[^"'\/]+)("|')/g, `$1=$2./assets/$3$4`);
+
+// // Fix asset references - look for src="/assets/ or href="/assets/ patterns
+// html = html.replace(/(src|href)=("|')\/assets\//g, `$1=$2/__outputs/${projectId}/assets/`);
+// // Also fix assets without leading slash
+// html = html.replace(/(src|href)=("|')assets\//g, `$1=$2__outputs/${projectId}/assets/`);
+
+// // Fix root-level assets (like /vite.svg)
+// html = html.replace(/(src|href)=("|')\/([^\/][^"']*\.(svg|png|jpg|jpeg|gif|ico|webp|css|js))/g, 
+//                    `$1=$2/__outputs/${projectId}/$3`);
+
+fs.writeFileSync(htmlPath, html);
+}
+
+async function init() {  
+  // PROJECT_ID="9090"
   await waitFor(1000)
   
   const outputPath = path.join(__dirname, "builds", PROJECT_ID);
@@ -70,7 +129,8 @@ async function init() {
   })
  
   
-  
+  // updateViteConfig({viteConfigPaths:[path.join(outputPath, "vite.config.js"),path.join(outputPath, "vite.config.ts")]});        
+
   const p = exec(`cd ${outputPath} &&  npm install --legacy-peer-deps --include=optional && npm run build`);
 
   p.stdout.on("data", log => {
@@ -102,7 +162,7 @@ async function init() {
       log: "Build Complete",
       type:"success",
     })
-    const distFolderPath = path.join(outputPath, "dist");
+    const distFolderPath = path.join(outputPath, PROJECT_OUTPUT_FOLDER);
     const distFolderContents = fs.readdirSync(distFolderPath, { recursive: true });
 
 
@@ -113,24 +173,28 @@ async function init() {
       type:"info"
     })
 
-    for (const file of distFolderContents) {
+    for (let filename of distFolderContents) {
       await waitFor(100)
-      const filePath = path.join(distFolderPath, file)
+      let filePath = path.join(distFolderPath, filename)
 
       if (fs.lstatSync(filePath).isDirectory()) continue;
 
+      if(filename === "index.html"){
+      // update the html file with the correct asset paths
+        replaceAssetPaths({htmlPath:filePath, projectId:PROJECT_ID});        
+      }
 
       
       publishLog({
         metadata:METADATA,
         deploymentId: PROJECT_ID,      
-        log: `Uploading ${file}`,
+        log: `Uploading ${filename}`,
         type:"info"
       })      
 
       const command = new PutObjectCommand({
         Bucket: Config.AWS_S3_BUCKET,
-        Key: `__outputs/${PROJECT_ID}/${file}`,
+        Key: `__outputs/${PROJECT_ID}/${filename}`,
         Body: fs.createReadStream(filePath),
         ContentType: mime.lookup(filePath)
       });
@@ -140,7 +204,7 @@ async function init() {
       publishLog({
         metadata:METADATA,
         deploymentId: PROJECT_ID,      
-        log: `Uploaded ${file}`,
+        log: `Uploaded ${filename}`,
         type:"info"
       })   
 
@@ -165,6 +229,7 @@ async function init() {
       hasError:false
     })
 
+    publisher?.disconnect()
     process.exit(0)
   });
 
