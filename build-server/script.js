@@ -13,6 +13,7 @@ dotenv.config();
 
 const s3Client = new S3Client({
   region: Config.AWS_REGION,
+  forcePathStyle: true,
   credentials: {
     accessKeyId: Config.AWS_ACCESS_KEY,
     secretAccessKey: Config.AWS_SECRET_ACCESS_KEY
@@ -123,7 +124,7 @@ async function init() {
   
   publishLog({
     metadata:METADATA,
-    deploymentId: PROJECT_ID,      
+    projectId: PROJECT_ID,      
     log: "Running install and build commands", 
     type:"info"
   })
@@ -136,7 +137,7 @@ async function init() {
   p.stdout.on("data", log => {
     publishLog({
       metadata:METADATA,
-      deploymentId: PROJECT_ID,      
+      projectId: PROJECT_ID,      
       log: log.toString(),
       type:"info"
     })  
@@ -145,7 +146,7 @@ async function init() {
   p.stdout.on("error", error => {
     publishLog({
       metadata:METADATA,
-      deploymentId: PROJECT_ID,      
+      projectId: PROJECT_ID,      
       log: error.toString(),
       isCompleted:true,
       hasError:true
@@ -158,7 +159,7 @@ async function init() {
   p.on("close", async () => {    
     publishLog({
       metadata:METADATA,
-      deploymentId: PROJECT_ID,      
+      projectId: PROJECT_ID,      
       log: "Build Complete",
       type:"success",
     })
@@ -168,7 +169,7 @@ async function init() {
 
     publishLog({
       metadata:METADATA,
-      deploymentId: PROJECT_ID,      
+      projectId: PROJECT_ID,      
       log: "Preparing to upload built folder",
       type:"info"
     })
@@ -187,7 +188,7 @@ async function init() {
       
       publishLog({
         metadata:METADATA,
-        deploymentId: PROJECT_ID,      
+        projectId: PROJECT_ID,      
         log: `Uploading ${filename}`,
         type:"info"
       })      
@@ -203,7 +204,7 @@ async function init() {
       
       publishLog({
         metadata:METADATA,
-        deploymentId: PROJECT_ID,      
+        projectId: PROJECT_ID,      
         log: `Uploaded ${filename}`,
         type:"info"
       })   
@@ -213,7 +214,7 @@ async function init() {
 
     publishLog({
       metadata:METADATA,
-      deploymentId: PROJECT_ID,      
+      projectId: PROJECT_ID,      
       log: "Deployed Successfully.",
       type:"success"
     })
@@ -223,7 +224,7 @@ async function init() {
     
     publishLog({
       metadata:METADATA,
-      deploymentId: PROJECT_ID,      
+      projectId: PROJECT_ID,      
       log: "Process Complete",
       isCompleted:true,
       hasError:false

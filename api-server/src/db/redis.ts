@@ -33,11 +33,20 @@ export const initSubscribeToLogs = () => {
 
     if (parsedLog?.isCompleted) {
       // cleanup stuff
-      const metadata = parsedLog.metadata as ProjectDeploymentMetadata
+      // const metadata = parsedLog.metadata as ProjectDeploymentMetadata
+      const projectId = parsedLog?.projectId
+      const deploymentId = parsedLog?.deploymentId
+      const metadata = await ProjectService.getLastDeploymentMetadata(deploymentId) as ProjectDeploymentMetadata
+
+      if (!metadata) {
+        console.log("No project metadata found. Skipping deployment cleanup")
+        sendRefreshDeploymentsTableEvent({ channelId: projectId })
+        return
+      };
       await ProjectService.handleProjectDeployed({ ...metadata, error: parsedLog?.hasError })
       await ProjectService.saveDeploymentLogs(deploymentId)
       await redis.del(`deployment_logs:${deploymentId}`);
-      sendRefreshDeploymentsTableEvent({ channelId: metadata?.projectId })
+      sendRefreshDeploymentsTableEvent({ channelId: projectId })
     }
     sendDeploymentEvent({ channelId: channel, log: message })
 

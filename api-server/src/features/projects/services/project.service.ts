@@ -53,6 +53,34 @@ const getRequiredDeploymentEnvVariables = () => {
   ]
 }
 
+
+const getLastDeploymentMetadata = async (deploymentId: string) => {
+  const [deployment] = await
+    database
+      .select({
+        projectId: projects.id,
+        deploymentId: deployments.id,
+        userId: deployments.userId,
+        deploymentUrl: deployments.deploymentUrl,
+        projectSlug: projects.slug,
+      })
+      .from(deployments)
+      .leftJoin(projects, eq(projects.id, deployments.projectId))
+      .where(eq(deployments.id, deploymentId))
+
+  if (!deploymentId) {
+    return null
+  }
+
+  return {
+    projectId: deployment.projectId,
+    deploymentId: deployment.deploymentId,
+    userId: deployment.userId,
+    deploymentUrl: deployment.deploymentUrl,
+    projectSlug: deployment.projectSlug,
+  }
+}
+
 const getProjectIdBySlug = async (slug: string) => {
 
   const redisProjectId = await redis.get(Config.PROJECT_SLUG_TO_ID_CACHE_KEY(slug))
@@ -276,6 +304,11 @@ const deployProject = async (payload: DeployProject) => {
         userId: payload.userId,
         deploymentUrl: deployment.deploymentUrl || ""
       })
+    })
+
+    envVariables.push({
+      name: "DEPLOYMENT_ID",
+      value: deployment.id
     })
 
     const containerOverridesEnvs = [...getRequiredDeploymentEnvVariables(), ...envVariables]
@@ -623,7 +656,7 @@ const saveDeploymentLogs = async (deploymentId: string) => {
   // console.log("to save logs ", payload)
   try {
     const redisDeploymentLogs = await redis.lrange(`deployment_logs:${deploymentId}`, 0, -1)
-
+    // console.log("saving logs ", redisDeploymentLogs)
     if (!redisDeploymentLogs?.length) return;
     const parsedLogs: SaveDeploymentLogPayload[] = redisDeploymentLogs
       .map(log => JSON.parse(log))
@@ -693,7 +726,8 @@ const ProjectService = {
   saveDeploymentLogs,
   listDeploymentLogs,
   deleteDeployment,
-  getProjectIdBySlug
+  getProjectIdBySlug,
+  getLastDeploymentMetadata
 }
 
 export default ProjectService

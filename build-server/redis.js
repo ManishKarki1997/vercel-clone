@@ -11,7 +11,7 @@ const publisher = new Redis({
 
  const publishLog = ({
   log,
-  deploymentId,
+  projectId,
   type,
   metadata,
   isCompleted,
@@ -22,14 +22,15 @@ const publisher = new Redis({
   const payload = {
     log,
     date,
-    deploymentId,
+    projectId,
     type,
     metadata,
     isCompleted,
-    hasError
+    hasError,
+    deploymentId: Config.DEPLOYMENT_ID
   }
 
-  publisher.publish(`logs:${deploymentId}`, JSON.stringify(payload))
+  publisher.publish(`logs:${projectId}`, JSON.stringify(payload))
 }
 
 module.exports = {

@@ -5,6 +5,7 @@ import { fileURLToPath } from 'url';
 import type { TriggerLocalBuildPayload } from "../types/project.type";
 import { Config } from "../../../config/env";
 import EventEmitter from 'events';
+import { publisher } from '../../../db/redis';
 
 export class LocalProjectDeployService extends EventEmitter {
 
@@ -52,6 +53,20 @@ export class LocalProjectDeployService extends EventEmitter {
         this.stopDocker({ dockerPath: this.BUILD_SERVER_PATH, projectId: payload.projectId });
       }
 
+      const date = new Date().toISOString();
+
+      const initialPayload = {
+        log: "",
+        date,
+        projectId: payload.projectId,
+        type: "info",
+        isCompleted: false,
+        hasError: false,
+      }
+
+      initialPayload.log = "Spinning up docker container to build the project"
+      publisher.publish(`logs:${initialPayload.projectId}`, JSON.stringify(initialPayload))
+      initialPayload.log = ""
 
 
       // Spawn a new process to run docker compose up with the env file
@@ -71,15 +86,32 @@ export class LocalProjectDeployService extends EventEmitter {
       // console.log("dirname", path.dirname(__filename), BUILD_SERVER_PATH, command)
       // const process = exec(command);
 
-      // dockerProcess.on("data", (data) => console.log(data.toString()));
+
+      dockerProcess.on("data", (data) => {
+        initialPayload.log = data.toString()
+        publisher.publish(`logs:${initialPayload.projectId}`, JSON.stringify(initialPayload))
+      });
+
       dockerProcess.on("error", (err) => {
+        initialPayload.log = err.toString()
+        initialPayload.isCompleted = true
+        initialPayload.hasError = true
+        publisher.publish(`logs:${initialPayload.projectId}`, JSON.stringify(initialPayload))
         this.emit("error", err)
       });
 
       dockerProcess.on("exit", (code) => {
         if (code === 1) {
+          initialPayload.log = "Something went wrong"
+          initialPayload.isCompleted = true
+          initialPayload.hasError = true
+          publisher.publish(`logs:${initialPayload.projectId}`, JSON.stringify(initialPayload))
           this.emit("error", new Error("Something went wrong"))
         } else {
+          initialPayload.log = "Finished spinning up docker container"
+          initialPayload.isCompleted = false
+          initialPayload.hasError = false
+          publisher.publish(`logs:${initialPayload.projectId}`, JSON.stringify(initialPayload))
           this.emit("exit", code)
         }
         console.log(`Process exited with code ${code}`);

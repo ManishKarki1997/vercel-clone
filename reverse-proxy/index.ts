@@ -36,7 +36,6 @@ app.use(async (req, res, next) => {
     const subdomain = !hostname ? "" : hostname.split('.')[0];
 
     const projectId = await getProjectIdBySlug(subdomain)
-    console.log("projectId", projectId)
     if (!projectId) {
       return res.send("Project not found")
     }

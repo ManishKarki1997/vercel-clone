@@ -15,4 +15,5 @@ cd ../../
 #npm install --legacy-peer-deps --include=optional 
 #npm run build
 
+# exec pnpm script.js
 exec node script.js

@@ -17,6 +17,7 @@ const Config = {
   REDIS_SERVICE_URI: process.env.REDIS_SERVICE_URI || "",
 
   PROJECT_METADATA: process.env.PROJECT_METADATA,
+  DEPLOYMENT_ID: process.env.DEPLOYMENT_ID,
   PROJECT_OUTPUT_FOLDER: process.env.PROJECT_OUTPUT_FOLDER || "dist",
 }
 

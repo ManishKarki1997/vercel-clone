@@ -133,7 +133,7 @@ function DeploymentLogs({
                   {
                     deploymentLogs.map((log, idx) => (
                       <TableRow key={idx}>
-                        <TableCell width={"250px"} className='text-base text-muted-foreground font-mono'>{log?.timestamp ? new Date(log?.timestamp).toLocaleString() : log?.date ? new Date(log?.date).toLocaleDateString() : ""}</TableCell>
+                        <TableCell width={"250px"} className='text-base text-muted-foreground font-mono'>{log?.timestamp ? new Date(log?.timestamp).toLocaleString() : log?.date ? new Date(log?.date).toLocaleString() : ""}</TableCell>
                         <TableCell className={cn(' text-base text-foreground font-medium', { 'text-red-500': log.type === "error", 'text-green-500': log.type === "success" })}>{log.log}</TableCell>
                       </TableRow>
                     ))
