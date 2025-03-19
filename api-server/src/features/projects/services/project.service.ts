@@ -656,7 +656,8 @@ const saveDeploymentLogs = async (deploymentId: string) => {
   // console.log("to save logs ", payload)
   try {
     const redisDeploymentLogs = await redis.lrange(`deployment_logs:${deploymentId}`, 0, -1)
-    // console.log("saving logs ", redisDeploymentLogs)
+    // console.log("saving logs ", redisDeploymentLogs, { deploymentId })
+
     if (!redisDeploymentLogs?.length) return;
     const parsedLogs: SaveDeploymentLogPayload[] = redisDeploymentLogs
       .map(log => JSON.parse(log))

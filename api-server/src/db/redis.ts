@@ -26,16 +26,18 @@ export const redis = new Redis(redisConfig)
 export const initSubscribeToLogs = () => {
   subscriber.psubscribe(`logs*`)
   subscriber.on(`pmessage`, async (pattern, channel, message) => {
-    const deploymentId = channel.split(":")[1]
+    // const deploymentId = channel.split(":")[1]
     const parsedLog = JSON.parse(message)
+    const projectId = parsedLog?.projectId
+    const deploymentId = parsedLog?.deploymentId
+
     // console.log(`Received log `, parsedLog)
     await redis.rpush(`deployment_logs:${deploymentId}`, message);
+    // console.log("pushing deployment logs to deployment id ", deploymentId)
 
     if (parsedLog?.isCompleted) {
       // cleanup stuff
-      // const metadata = parsedLog.metadata as ProjectDeploymentMetadata
-      const projectId = parsedLog?.projectId
-      const deploymentId = parsedLog?.deploymentId
+      // const metadata = parsedLog.metadata as ProjectDeploymentMetadata      
       const metadata = await ProjectService.getLastDeploymentMetadata(deploymentId) as ProjectDeploymentMetadata
 
       if (!metadata) {
@@ -45,7 +47,7 @@ export const initSubscribeToLogs = () => {
       };
       await ProjectService.handleProjectDeployed({ ...metadata, error: parsedLog?.hasError })
       await ProjectService.saveDeploymentLogs(deploymentId)
-      await redis.del(`deployment_logs:${deploymentId}`);
+      await redis.del(`logs:${deploymentId}`);
       sendRefreshDeploymentsTableEvent({ channelId: projectId })
     }
     sendDeploymentEvent({ channelId: channel, log: message })

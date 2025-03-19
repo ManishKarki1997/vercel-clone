@@ -80,13 +80,6 @@ export class LocalProjectDeployService extends EventEmitter {
       });
 
 
-
-
-      // const command = ` cd "${BUILD_SERVER_PATH}" && docker compose up --build} `
-      // console.log("dirname", path.dirname(__filename), BUILD_SERVER_PATH, command)
-      // const process = exec(command);
-
-
       dockerProcess.on("data", (data) => {
         initialPayload.log = data.toString()
         publisher.publish(`logs:${initialPayload.projectId}`, JSON.stringify(initialPayload))
@@ -114,7 +107,7 @@ export class LocalProjectDeployService extends EventEmitter {
           publisher.publish(`logs:${initialPayload.projectId}`, JSON.stringify(initialPayload))
           this.emit("exit", code)
         }
-        console.log(`Process exited with code ${code}`);
+        // console.log(`Process exited with code ${code}`);
       });
 
     } catch (error) {
