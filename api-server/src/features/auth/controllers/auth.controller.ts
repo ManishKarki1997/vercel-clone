@@ -22,8 +22,8 @@ const signup = async (req: Request, res: Response): Promise<any> => {
 const login = async (req: Request, res: Response): Promise<any> => {
   const payload = req.body;
 
-  const { data: user } = await AuthService.login(payload)
-
+  const { data: user, error } = await AuthService.login(payload)
+  console.error(error)
   if (user.session?.access_token) {
 
     res.cookie(Config.COOKIE_NAME, user.session?.access_token, {
@@ -34,6 +34,8 @@ const login = async (req: Request, res: Response): Promise<any> => {
       // domain:"localhost",
       path: "/"
     })
+  } else {
+    throw new Error("Couldn't log in")
   }
 
   return res.status(200).json({
